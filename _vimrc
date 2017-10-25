@@ -26,28 +26,26 @@ if (has("win32") || has("win64"))  " настройки для windows
     else  " настройки для консольного vim
         colorscheme default  " установим цветовую схему
         " цвет текста и фона подсвеченной колонки:
-        highlight ColorColumn ctermfg=brown ctermbg=black
+        highlight ColorColumn ctermfg=Brown ctermbg=DarkBlue
     endif
-else
-    if has("unix")
-        let s:uname = system("uname")
-        if s:uname == "Linux\n"  " настройки для linux
-            let cterms=['xterm', 'rxvt', 'rxvt-unicode', 'urxvt',
-                        \ 'xterm-256color']
-            if (index(cterms, $TERM) >= 0)  " тема для 256-цветного терминала
-                set t_Co=256  " использовать в иксах 256 цветов
-                colorscheme solarized  " установим цветовую схему
-                set colorcolumn=80  " подсветить колонку 80
-                highlight ColorColumn ctermfg=red
-            else  " настройки для tty
-                set t_Co=8  " использовать в tty 8 цветов
-                let g:solarized_contrast="high"
-                colorscheme solarized  " установим цветовую схему
-                " подсветить диапазон колонок:
-                let &colorcolumn=join(range(80,999),",")
-                " цвет текста и фона подсвеченной колонки:
-                highlight ColorColumn ctermfg=red ctermbg=black
-            endif
+elseif has("unix")
+    let s:uname = system("uname")
+    if s:uname == "Linux\n"  " настройки для linux
+        let cterms=['xterm', 'rxvt', 'rxvt-unicode', 'urxvt',
+                    \ 'xterm-256color']
+        if (index(cterms, $TERM) >= 0)  " тема для 256-цветного терминала
+            set t_Co=256  " использовать в иксах 256 цветов
+            colorscheme solarized  " установим цветовую схему
+            set colorcolumn=80  " подсветить колонку 80
+            highlight ColorColumn ctermfg=red
+        else  " настройки для tty
+            set t_Co=8  " использовать в tty 8 цветов
+            let g:solarized_contrast="high"
+            colorscheme solarized  " установим цветовую схему
+            " подсветить диапазон колонок:
+            let &colorcolumn=join(range(80,999),",")
+            " цвет текста и фона подсвеченной колонки:
+            highlight ColorColumn ctermfg=red ctermbg=black
         endif
     endif
 endif
@@ -136,16 +134,66 @@ function! s:LFixToggle()
         let g:qwindow=1
     endif
 endfunction
-" автообновление тегов при сохранении файлов C
-:autocmd FileType c autocmd BufWritePost *
+" автообновление тегов при сохранении файлов C, C++
+:autocmd FileType c,cpp autocmd BufWritePost *
     \ call system("ctags  -R --fields=+iaS --extra=+q")
+" команда генерации меток по включаемым файлам:
+let s:UpdateIncludeTags='!ctags -f include_tags -R --fields=+iaS --extra=+q '
+" для контекстного автодополнения подключим теги для включаемых файлов:
+set tags+=include_tags
 " автоскрытие справки по текущему тегу после выбора:
 autocmd CompleteDone * pclose
-" PELLES C
-if (has("win32") || has("win64"))
-    " назначим на <F5> компиляцию и запуск
-    autocmd FileType c nnoremap <buffer> <F5> :execute 'w'<CR>
-        \ :execute '!cls'<CR>:execute 'lmake'<CR>:execute '!%:r.exe'<CR>
+" КОМПИЛЯЦИЯ И ЗАПУСК
+" назначим на <F5> компиляцию и запуск для файлов C, C++
+autocmd FileType c,cpp nnoremap <buffer> <F5> :execute 'w'<CR>
+    \:execute '!cls'<CR>:execute 'lmake'<CR>:execute '!%:r.exe'<CR>
+" КОМПИЛЯЦИЯ C++
+if (has('win32') || has('win64'))
+    " определим программу, вызываемую командой make для файлов cpp (GCC)
+    let s:compile_cpp_command = 'g++ -O2 % -o %:r'
+    let s:cpp_standard_flags = '-Wall -Wextra'
+    let s:cpp11_flags = '-std=c++11'
+    let s:extra_flags = '-l sqlite3 -l gdi32'
+    let s:compile_cpp_command = join([s:compile_cpp_command,
+        \ s:cpp_standard_flags, s:cpp11_flags, s:extra_flags], ' ')
+    autocmd FileType cpp let &l:makeprg=s:compile_cpp_command
+    " добавим хоткей для генерации меток по включаемых файлов:
+    let s:MinGwIncludeDir='C:\MinGW\include'
+    let GccUpdateTags=s:UpdateIncludeTags
+                      \.'"'.s:MinGwIncludeDir.'\sqlite3.h" '
+                      \.'"'.s:MinGwIncludeDir.'\windef.h" '
+                      \.'"'.s:MinGwIncludeDir.'\windows.h" '
+                      \.'"'.s:MinGwIncludeDir.'\winuser.h" '
+    nnoremap <F2> :execute GccUpdateTags<CR><CR>
+    " научим vim распознавать вывод, генерируемый компилятором GCC
+    autocmd FileType cpp setlocal errorformat=
+        \%W%f:%l:%c:\ Warning:\ %m,%Z%m,
+        \%E%f:%l:%c:\ Error:\ %m,%Z%m,
+        \%A%f:%l:%c:\ %m,%Z%m,
+        \%-G%.%#
+endif
+" КОМПИЛЯЦИЯ C
+let s:c_compiler='gcc'  " выберем компилятор для c
+if (s:c_compiler == 'gcc' && (has('win32') || has('win64')))
+    " GCC
+    " определим программу, вызываемую командой make для файлов c (GCC)
+    let s:compile_gcc_command = 'gcc -Wall % -lsqlite3 -lgdi32 -o %:r.exe'
+    autocmd FileType c let &l:makeprg=s:compile_gcc_command
+    " добавим хоткей для генерации меток по включаемых файлов:
+    let s:MinGwIncludeDir='C:\MinGW\include'
+    let GccUpdateTags=s:UpdateIncludeTags
+                      \.'"'.s:MinGwIncludeDir.'\windef.h" '
+                      \.'"'.s:MinGwIncludeDir.'\windows.h" '
+                      \.'"'.s:MinGwIncludeDir.'\winuser.h" '
+    nnoremap <F2> :execute GccUpdateTags<CR><CR>
+    " научим vim распознавать вывод, генерируемый компилятором GCC
+    autocmd FileType c setlocal errorformat=
+        \%W%f:%l:%c:\ Warning:\ %m,%Z%m,
+        \%E%f:%l:%c:\ Error:\ %m,%Z%m,
+        \%A%f:%l:%c:\ %m,%Z%m,
+        \%-G%.%#
+elseif (s:c_compiler == 'PellesC' && (has('win32') || has('win64')))
+    " PELLES C
     " определим программу, вызываемую командой make для файлов c (PellesC)
     " сгенерируем команду для сборки, должно получиться что-то типа:
     " cc -Tx86-coff -Ot -W1 -Ze -std:C11 %
@@ -178,22 +226,13 @@ if (has("win32") || has("win64"))
     " префикс l установит опцию только для текущего буфера - аналог setlocal
     autocmd FileType c let &l:makeprg=s:PellesCCompileX86
     " добавим хоткей для генерации меток по включаемых файлов:
-    let s:UpdateIncludeTags=
-        \'!ctags -f include_tags -R --fields=+iaS --extra=+q '
     let PellesCUpdateTags=s:UpdateIncludeTags
                           \.'"'.s:PellesCDir.'\Include\Win\fci.h" '
                           \.'"'.s:PellesCDir.'\Include\Win\windef.h" '
                           \.'"'.s:PellesCDir.'\Include\Win\windows.h" '
                           \.'"'.s:PellesCDir.'\Include\Win\winuser.h" '
     nnoremap <F2> :execute PellesCUpdateTags<CR><CR>
-    " для контекстного автодополнения подключим теги для включаемых файлов:
-    set tags+=include_tags
     " научим vim распознавать вывод, генерируемый компилятором PellesC
-    " формат сообщений компилятора
-    " test.c
-    " test.c(3): error #2168: Operands of '=' have incompatible types 'int'
-    " and 'char *'.
-    " test.c(3): warning #2115: Local 'b' is initialized but never used.
     autocmd FileType c setlocal errorformat=
         \%f(%l):\ %trror\ #%n:\ %m,
         \%f(%l):\ %tarning\ #%n:\ %m,
@@ -244,31 +283,29 @@ if (has("win32") || has("win64"))  " настройки для windows
     let s:statusline_vreplace_color_ctermfg='Black'
     let s:statusline_vreplace_color_guibg='Black'
     let s:statusline_vreplace_color_guifg='Brown'
-else
-    if has("unix")
-        let s:uname = system("uname")
-        if s:uname == "Linux\n"  " настройки для linux
-    let s:statusline_normal_color_ctermbg='Black'
-    let s:statusline_normal_color_ctermfg='DarkBlue'
-    let s:statusline_normal_color_guibg='Black'
-    let s:statusline_normal_color_guifg='DodgerBlue'
-    let s:statusline_insert_color_ctermbg='Black'
-    let s:statusline_insert_color_ctermfg='DarkGreen'
-    let s:statusline_insert_color_guibg='Black'
-    let s:statusline_insert_color_guifg='OliveDrab4'
-    let s:statusline_replace_color_ctermbg='Black'
-    let s:statusline_replace_color_ctermfg='DarkMagenta'
-    let s:statusline_replace_color_guibg='Black'
-    let s:statusline_replace_color_guifg='DeepPink'
-    let s:statusline_visual_color_ctermbg='Black'
-    let s:statusline_visual_color_ctermfg='DarkCyan'
-    let s:statusline_visual_color_guibg='Black'
-    let s:statusline_visual_color_guifg='Turquoise'
-    let s:statusline_vreplace_color_ctermbg='Black'
-    let s:statusline_vreplace_color_ctermfg='Brown'
-    let s:statusline_vreplace_color_guibg='Black'
-    let s:statusline_vreplace_color_guifg='Brown'
-        endif
+elseif has("unix")
+    let s:uname = system("uname")
+    if s:uname == "Linux\n"  " настройки для linux
+        let s:statusline_normal_color_ctermbg='Black'
+        let s:statusline_normal_color_ctermfg='DarkBlue'
+        let s:statusline_normal_color_guibg='Black'
+        let s:statusline_normal_color_guifg='DodgerBlue'
+        let s:statusline_insert_color_ctermbg='Black'
+        let s:statusline_insert_color_ctermfg='DarkGreen'
+        let s:statusline_insert_color_guibg='Black'
+        let s:statusline_insert_color_guifg='OliveDrab4'
+        let s:statusline_replace_color_ctermbg='Black'
+        let s:statusline_replace_color_ctermfg='DarkMagenta'
+        let s:statusline_replace_color_guibg='Black'
+        let s:statusline_replace_color_guifg='DeepPink'
+        let s:statusline_visual_color_ctermbg='Black'
+        let s:statusline_visual_color_ctermfg='DarkCyan'
+        let s:statusline_visual_color_guibg='Black'
+        let s:statusline_visual_color_guifg='Turquoise'
+        let s:statusline_vreplace_color_ctermbg='Black'
+        let s:statusline_vreplace_color_ctermfg='Brown'
+        let s:statusline_vreplace_color_guibg='Black'
+        let s:statusline_vreplace_color_guifg='Brown'
     endif
 endif
 " назначим ex-команду для установки дефолтного цвета строки статуса
