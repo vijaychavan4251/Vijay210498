@@ -1,2 +1,2 @@
 # configs
-Just a backup for various settings
+Just a backup of a various settings
