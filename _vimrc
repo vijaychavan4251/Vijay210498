@@ -258,9 +258,47 @@ endfunction
 nnoremap & :&&<CR>
 xnoremap & :&&<CR>
 " СТРОКА СТАТУСА
-set statusline=%<\ %{StatuslineModeToString()}\ %f\ %{(&readonly)?'\ ':''}
-    \%{(&modified)?'\ [+]':''}%=%y\ %k\ %p%%\ %l/%L\ \ :\ \ %c\ 
-" другие символы: 
+set statusline=%<\ %{StatuslineModeToString()}\ \ %f\ %{(&readonly)?'\ ':''}
+    \%{(&modified)?'\ [+]':''}%=
+    \\ %{&filetype}\ %k\ \ %p%%\ ≡\ %l/%L\ \ :\ \ %c\ %{whitespacecheck}
+" будем проверять лишние пробелы и смешанные отступы при чтении и записи файла
+:autocmd BufReadPost * call CheckWhitespace()
+:autocmd BufWritePost * call CheckWhitespace()
+function! CheckWhitespace()
+    " проверка лишних пробелов и смешанных отступов
+    let l:result = ''
+    " проверим лишние пробелы в конце строки
+    let l:trailing_spaces = search('\s\+$', 'nw')
+    if l:trailing_spaces != 0
+        let l:result .= printf(' [%s]trailing', l:trailing_spaces)
+    endif
+    " проверим смешанные отступы
+    let l:mixed_indent = search('\v(^\t+ +)|(^ +\t+)', 'nw')
+    if l:mixed_indent != 0
+        let l:result .= printf(' [%s]mixed-indent', l:mixed_indent)
+    endif
+    " проверим использование разнотипных отступов в файле
+    let l:indent_tabs = search('\v(^\t+)', 'nw')
+    let l:indent_spc = search('\v(^ +)', 'nw')
+    if l:indent_tabs > 0 && l:indent_spc > 0
+        let l:mixed_indent_file = printf('%d:%d', l:indent_tabs, l:indent_spc)
+    else
+        let l:mixed_indent_file = ''
+    endif
+    if !empty(l:mixed_indent_file)
+        let l:result .= printf(' [%s]mix-indent-file', l:mixed_indent_file)
+    endif
+    " обрежем информационную строку, чтобы помещалась в окно
+    let l:minwidth=9
+    let l:winwidth=120
+    if winwidth(0) < l:winwidth && len(split(l:result, '\zs')) > l:minwidth
+        let l:result = matchstr(l:result, '^.\{'.l:minwidth.'}').'…'
+    endif
+    if !empty(l:result)
+        let l:result .= ' '
+    endif
+    let g:whitespacecheck = l:result
+endfunction
 " Создадим цветовую схему для строки статуса
 if (has("win32") || has("win64"))  " настройки для windows
     let s:statusline_normal_color_ctermbg='Blue'
@@ -354,10 +392,10 @@ function! s:SetStatuslineColorVisual()
     return ''  " чтобы курсор не прыгал в начало строки при входе в visual mode
 endfunction
 " смена цвета строки статуса при входе в режим вставки/замены:
-autocmd InsertEnter * call <SID>InsertStatuslineColor(v:insertmode)
+autocmd InsertEnter * call <SID>SetStatuslineColorInsert(v:insertmode)
 " смена цвета строки статуса при переключении режима вставки/замены:
-autocmd InsertChange * call <SID>InsertStatuslineColor(v:insertmode)
-function! s:InsertStatuslineColor(mode)
+autocmd InsertChange * call <SID>SetStatuslineColorInsert(v:insertmode)
+function! s:SetStatuslineColorInsert(mode)
     if a:mode == 'i'
         execute 'highlight statusline'
             \.' ctermbg='.s:statusline_insert_color_ctermbg
