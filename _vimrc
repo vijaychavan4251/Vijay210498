@@ -7,7 +7,26 @@ syntax on  " включим подсветку синтаксиса
 set omnifunc=syntaxcomplete#Complete  " контекстное автодополнение <C-X><C-O>
 set shortmess+=I  " отключаем детей Уганды
 set background=dark  " установим фон
-if has("gui_running")  " настройки для gvim
+" определим платформу, под которой запущен vim
+let s:platform = 'unknown'
+if (has('win32') || has('win64'))
+    let s:platform = 'windows'
+elseif has('unix')
+    let s:platform = get({
+        \ 'Linux'  : 'linux',
+        \ 'Darwin' : 'macos',
+        \ }, substitute(system('uname'), '\n', '', ''), 'unknown')
+endif
+" определим интерфейс: gvim, консоль или tty
+let s:interface = 'unknown'
+if has('gui_running')
+    let s:interface = 'gui'
+elseif (empty($DISPLAY) && (s:platform !='windows'))
+    let s:interface = 'tty'
+else
+    let s:interface = 'con'
+endif
+if (s:interface == 'gui')  " настройки для gvim
     set guicursor+=a:blinkon0  " курсор в vim-стиле для gvim
     set guioptions-=m  " скрыть меню
     set guioptions-=T  " скрыть тулбар
@@ -15,38 +34,33 @@ if has("gui_running")  " настройки для gvim
     set guioptions-=L  " скрыть левый сроллбар
     colorscheme solarized  " установим цветовую схему
 endif
-if (has("win32") || has("win64"))  " настройки для windows
+if (s:platform == 'windows')
     set encoding=utf-8  " кодировка интерфейса
     language messages en_US.UTF-8  " язык и кодировка сообщений
     " language messages ru_RU.UTF-8  " язык и кодировка сообщений
     set colorcolumn=80  " подсветить колонку 80
-    if has("gui_running")  " настройки для gvim
+    if (s:interface == 'gui')  " настройки для gvim
         set guifont=Terminus_(TTF)_for_Windows:h14:cRUSSIAN:qDRAFT
         " set guifont=Terminus:h21:cRUSSIAN:qDRAFT
-    else  " настройки для консольного vim
+    elseif (s:interface == 'con')
         colorscheme default  " установим цветовую схему
         " цвет текста и фона подсвеченной колонки:
         highlight ColorColumn ctermfg=Brown ctermbg=DarkBlue
     endif
-elseif has("unix")
-    let s:uname = system("uname")
-    if s:uname == "Linux\n"  " настройки для linux
-        let cterms=['xterm', 'rxvt', 'rxvt-unicode', 'urxvt',
-                    \ 'xterm-256color']
-        if (index(cterms, $TERM) >= 0)  " тема для 256-цветного терминала
-            set t_Co=256  " использовать в иксах 256 цветов
-            colorscheme solarized  " установим цветовую схему
-            set colorcolumn=80  " подсветить колонку 80
-            highlight ColorColumn ctermfg=red
-        else  " настройки для tty
-            set t_Co=8  " использовать в tty 8 цветов
-            let g:solarized_contrast="high"
-            colorscheme solarized  " установим цветовую схему
-            " подсветить диапазон колонок:
-            let &colorcolumn=join(range(80,999),",")
-            " цвет текста и фона подсвеченной колонки:
-            highlight ColorColumn ctermfg=red ctermbg=black
-        endif
+elseif (s:platform == 'linux')
+    if (s:interface == 'con')
+        set t_Co=256  " использовать в иксах 256 цветов
+        colorscheme solarized  " установим цветовую схему
+        set colorcolumn=80  " подсветить колонку 80
+        highlight ColorColumn ctermfg=red
+    elseif (s:interface == 'tty')
+        set t_Co=8  " использовать в tty 8 цветов
+        let g:solarized_contrast="high"
+        colorscheme solarized  " установим цветовую схему
+        " подсветить диапазон колонок:
+        let &colorcolumn=join(range(80,999),",")
+        " цвет текста и фона подсвеченной колонки:
+        highlight ColorColumn ctermfg=red ctermbg=black
     endif
 endif
 set number  " отображать номера строк
@@ -115,23 +129,23 @@ autocmd QuickFixCmdPost l* nested lwindow
 " показать/скрыть окно со списком результатов
 nnoremap <silent> <F7> :call <SID>QFixToggle()<CR>
 function! s:QFixToggle()
-    if exists("g:qfix_win")
+    if exists("b:qwindow")
         cclose
-        unlet g:qfix_win
+        unlet b:qwindow
     else
         copen 10
-        let g:qfix_win=1
+        let b:qwindow=1
     endif
 endfunction
 " показать/скрыть окно со списком адресов
 nnoremap <silent> <F6> :call <SID>LFixToggle()<CR>
 function! s:LFixToggle()
-    if exists("g:qwindow")
+    if exists("b:lwindow")
         lclose
-        unlet g:qwindow
+        unlet b:lwindow
     else
         lopen 10
-        let g:qwindow=1
+        let b:lwindow=1
     endif
 endfunction
 " автообновление тегов при сохранении файлов C, C++
@@ -148,7 +162,7 @@ autocmd CompleteDone * pclose
 autocmd FileType c,cpp nnoremap <buffer> <F5> :execute 'w'<CR>
     \:execute '!cls'<CR>:execute 'lmake'<CR>:execute '!%:r.exe'<CR>
 " КОМПИЛЯЦИЯ C++
-if (has('win32') || has('win64'))
+if (s:platform == 'windows')
     " определим программу, вызываемую командой make для файлов cpp (GCC)
     let s:compile_cpp_command = 'g++ -O2 % -o %:r'
     let s:cpp_standard_flags = '-Wall -Wextra'
@@ -174,7 +188,7 @@ if (has('win32') || has('win64'))
 endif
 " КОМПИЛЯЦИЯ C
 let s:c_compiler='gcc'  " выберем компилятор для c
-if (s:c_compiler == 'gcc' && (has('win32') || has('win64')))
+if (s:c_compiler == 'gcc' && (s:platform == 'windows'))
     " GCC
     " определим программу, вызываемую командой make для файлов c (GCC)
     let s:compile_gcc_command = 'gcc -Wall % -lsqlite3 -lgdi32 -o %:r.exe'
@@ -192,7 +206,7 @@ if (s:c_compiler == 'gcc' && (has('win32') || has('win64')))
         \%E%f:%l:%c:\ Error:\ %m,%Z%m,
         \%A%f:%l:%c:\ %m,%Z%m,
         \%-G%.%#
-elseif (s:c_compiler == 'PellesC' && (has('win32') || has('win64')))
+elseif (s:c_compiler == 'PellesC' && (s:platform == 'windows'))
     " PELLES C
     " определим программу, вызываемую командой make для файлов c (PellesC)
     " сгенерируем команду для сборки, должно получиться что-то типа:
@@ -258,9 +272,18 @@ endfunction
 nnoremap & :&&<CR>
 xnoremap & :&&<CR>
 " СТРОКА СТАТУСА
-set statusline=%<\ %{StatuslineModeToString()}\ \ %f\ %{(&readonly)?'\ ':''}
-    \%{(&modified)?'\ [+]':''}%=
-    \\ %{&filetype}\ %k\ \ %p%%\ ≡\ %l/%L\ \ :\ \ %c\ %{whitespacecheck}
+if ((s:interface == 'gui') || (s:interface == 'con'))
+    set statusline=
+        \%<\ %{StatuslineModeToString()}\ \ %f\ %{(&readonly)?'\ ':''}
+        \%{(&modified)?'\ [+]':''}
+        \%=\ %{&filetype}\ %k\ \ %p%%\ ≡\ %l/%L\ \ :\ \ %c\ 
+        \%{b:whitespacecheck}
+elseif (s:interface == 'tty')  " в tty не поддерживается unicode
+    set statusline=
+        \%<\ %{StatuslineModeToString()}\ >\ %f\ %r%{(&modified)?'\ [+]':''}
+        \%=<\ %{&filetype}\ %k<\ \ %p%%\ =\ %l/%L\ LN\ :\ \ %v\ <
+        \%{b:whitespacecheck}<
+endif
 " будем проверять лишние пробелы и смешанные отступы при чтении и записи файла
 :autocmd BufReadPost * call CheckWhitespace()
 :autocmd BufWritePost * call CheckWhitespace()
@@ -297,10 +320,10 @@ function! CheckWhitespace()
     if !empty(l:result)
         let l:result .= ' '
     endif
-    let g:whitespacecheck = l:result
+    let b:whitespacecheck = l:result
 endfunction
 " Создадим цветовую схему для строки статуса
-if (has("win32") || has("win64"))  " настройки для windows
+if (s:platform == 'windows')  " настройки для windows
     let s:statusline_normal_color_ctermbg='Blue'
     let s:statusline_normal_color_ctermfg='Black'
     let s:statusline_normal_color_guibg='Black'
@@ -321,30 +344,27 @@ if (has("win32") || has("win64"))  " настройки для windows
     let s:statusline_vreplace_color_ctermfg='Black'
     let s:statusline_vreplace_color_guibg='Black'
     let s:statusline_vreplace_color_guifg='Brown'
-elseif has("unix")
-    let s:uname = system("uname")
-    if s:uname == "Linux\n"  " настройки для linux
-        let s:statusline_normal_color_ctermbg='Black'
-        let s:statusline_normal_color_ctermfg='DarkBlue'
-        let s:statusline_normal_color_guibg='Black'
-        let s:statusline_normal_color_guifg='DodgerBlue'
-        let s:statusline_insert_color_ctermbg='Black'
-        let s:statusline_insert_color_ctermfg='DarkGreen'
-        let s:statusline_insert_color_guibg='Black'
-        let s:statusline_insert_color_guifg='OliveDrab4'
-        let s:statusline_replace_color_ctermbg='Black'
-        let s:statusline_replace_color_ctermfg='DarkMagenta'
-        let s:statusline_replace_color_guibg='Black'
-        let s:statusline_replace_color_guifg='DeepPink'
-        let s:statusline_visual_color_ctermbg='Black'
-        let s:statusline_visual_color_ctermfg='DarkCyan'
-        let s:statusline_visual_color_guibg='Black'
-        let s:statusline_visual_color_guifg='Turquoise'
-        let s:statusline_vreplace_color_ctermbg='Black'
-        let s:statusline_vreplace_color_ctermfg='Brown'
-        let s:statusline_vreplace_color_guibg='Black'
-        let s:statusline_vreplace_color_guifg='Brown'
-    endif
+elseif (s:platform == 'linux')
+    let s:statusline_normal_color_ctermbg='Black'
+    let s:statusline_normal_color_ctermfg='DarkBlue'
+    let s:statusline_normal_color_guibg='Black'
+    let s:statusline_normal_color_guifg='DodgerBlue'
+    let s:statusline_insert_color_ctermbg='Black'
+    let s:statusline_insert_color_ctermfg='DarkGreen'
+    let s:statusline_insert_color_guibg='Black'
+    let s:statusline_insert_color_guifg='OliveDrab4'
+    let s:statusline_replace_color_ctermbg='Black'
+    let s:statusline_replace_color_ctermfg='DarkMagenta'
+    let s:statusline_replace_color_guibg='Black'
+    let s:statusline_replace_color_guifg='DeepPink'
+    let s:statusline_visual_color_ctermbg='Black'
+    let s:statusline_visual_color_ctermfg='DarkCyan'
+    let s:statusline_visual_color_guibg='Black'
+    let s:statusline_visual_color_guifg='Turquoise'
+    let s:statusline_vreplace_color_ctermbg='Black'
+    let s:statusline_vreplace_color_ctermfg='Brown'
+    let s:statusline_vreplace_color_guibg='Black'
+    let s:statusline_vreplace_color_guifg='Brown'
 endif
 " назначим ex-команду для установки дефолтного цвета строки статуса
 command SetDefaultStatusLineColor :execute 'highlight statusline'
