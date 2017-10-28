@@ -285,7 +285,8 @@ elseif (s:interface == 'tty')  " в tty не поддерживается unicod
         \%{b:whitespacecheck}<
 endif
 " будем проверять лишние пробелы и смешанные отступы при чтении и записи файла
-:autocmd BufReadPost * call CheckWhitespace()
+:autocmd BufEnter * call CheckWhitespace()
+":autocmd BufReadPost * call CheckWhitespace()
 :autocmd BufWritePost * call CheckWhitespace()
 function! CheckWhitespace()
     " проверка лишних пробелов и смешанных отступов
