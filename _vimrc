@@ -181,8 +181,9 @@ if (s:platform == 'windows')
     nnoremap <F2> :execute GccUpdateTags<CR><CR>
     " научим vim распознавать вывод, генерируемый компилятором GCC
     autocmd FileType cpp setlocal errorformat=
-        \%W%f:%l:%c:\ Warning:\ %m,%Z%m,
-        \%E%f:%l:%c:\ Error:\ %m,%Z%m,
+        \%W%f:%l:%c:\ warning:\ %m,%Z%m,
+        \%E%f:%l:%c:\ error:\ %m,%Z%m,
+        \%I%f:%l:%c:\ note:\ %m,%Z%m,
         \%A%f:%l:%c:\ %m,%Z%m,
         \%-G%.%#
 endif
@@ -202,8 +203,9 @@ if (s:c_compiler == 'gcc' && (s:platform == 'windows'))
     nnoremap <F2> :execute GccUpdateTags<CR><CR>
     " научим vim распознавать вывод, генерируемый компилятором GCC
     autocmd FileType c setlocal errorformat=
-        \%W%f:%l:%c:\ Warning:\ %m,%Z%m,
-        \%E%f:%l:%c:\ Error:\ %m,%Z%m,
+        \%W%f:%l:%c:\ warning:\ %m,%Z%m,
+        \%E%f:%l:%c:\ error:\ %m,%Z%m,
+        \%I%f:%l:%c:\ note:\ %m,%Z%m,
         \%A%f:%l:%c:\ %m,%Z%m,
         \%-G%.%#
 elseif (s:c_compiler == 'PellesC' && (s:platform == 'windows'))
