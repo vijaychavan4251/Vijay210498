@@ -153,7 +153,7 @@ endfunction
     \ call system("ctags  -R --fields=+iaS --extra=+q")
 " команда генерации меток по включаемым файлам:
 let s:UpdateIncludeTags='!ctags -f include_tags -R --fields=+iaS --extra=+q '
-" для контекстного автодополнения подключим теги для включаемых файлов:
+" для контекстного автодополнения подключим теги для включаемым файлам:
 set tags+=include_tags
 " автоскрытие справки по текущему тегу после выбора:
 autocmd CompleteDone * pclose
@@ -171,7 +171,7 @@ if (s:platform == 'windows')
     let s:compile_cpp_command = join([s:compile_cpp_command,
         \ s:cpp_standard_flags, s:cpp11_flags, s:extra_flags], ' ')
     autocmd FileType cpp let &l:makeprg=s:compile_cpp_command
-    " добавим хоткей для генерации меток по включаемых файлов:
+    " добавим хоткей для генерации меток по включаемым файлам:
     let s:MinGwIncludeDir='C:\MinGW\include'
     let GccUpdateTags=s:UpdateIncludeTags
                       \.'"'.s:MinGwIncludeDir.'\sqlite3.h" '
@@ -194,7 +194,7 @@ if (s:c_compiler == 'gcc' && (s:platform == 'windows'))
     " определим программу, вызываемую командой make для файлов c (GCC)
     let s:compile_gcc_command = 'gcc -Wall % -lsqlite3 -lgdi32 -o %:r.exe'
     autocmd FileType c let &l:makeprg=s:compile_gcc_command
-    " добавим хоткей для генерации меток по включаемых файлов:
+    " добавим хоткей для генерации меток по включаемым файлам:
     let s:MinGwIncludeDir='C:\MinGW\include'
     let GccUpdateTags=s:UpdateIncludeTags
                       \.'"'.s:MinGwIncludeDir.'\windef.h" '
@@ -241,7 +241,7 @@ elseif (s:c_compiler == 'PellesC' && (s:platform == 'windows'))
                             \.s:PellesCx64Libraries
     " префикс l установит опцию только для текущего буфера - аналог setlocal
     autocmd FileType c let &l:makeprg=s:PellesCCompileX86
-    " добавим хоткей для генерации меток по включаемых файлов:
+    " добавим хоткей для генерации меток по включаемым файлам:
     let PellesCUpdateTags=s:UpdateIncludeTags
                           \.'"'.s:PellesCDir.'\Include\Win\fci.h" '
                           \.'"'.s:PellesCDir.'\Include\Win\windef.h" '
