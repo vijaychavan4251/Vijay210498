@@ -167,7 +167,7 @@ if (s:platform == 'windows')
     let s:compile_cpp_command = 'g++ -O2 % -o %:r'
     let s:cpp_standard_flags = '-Wall -Wextra'
     let s:cpp11_flags = '-std=c++11'
-    let s:extra_flags = '-l sqlite3 -l gdi32'
+    let s:extra_flags = '-l sqlite3 -mwindows'
     let s:compile_cpp_command = join([s:compile_cpp_command,
         \ s:cpp_standard_flags, s:cpp11_flags, s:extra_flags], ' ')
     autocmd FileType cpp let &l:makeprg=s:compile_cpp_command
@@ -192,7 +192,7 @@ let s:c_compiler='gcc'  " выберем компилятор для c
 if (s:c_compiler == 'gcc' && (s:platform == 'windows'))
     " GCC
     " определим программу, вызываемую командой make для файлов c (GCC)
-    let s:compile_gcc_command = 'gcc -Wall % -lsqlite3 -lgdi32 -o %:r.exe'
+    let s:compile_gcc_command = 'gcc -Wall % -lsqlite3 -mwindows -o %:r.exe'
     autocmd FileType c let &l:makeprg=s:compile_gcc_command
     " добавим хоткей для генерации меток по включаемым файлам:
     let s:MinGwIncludeDir='C:\MinGW\include'
@@ -287,8 +287,9 @@ elseif (s:interface == 'tty')  " в tty не поддерживается unicod
         \%{b:whitespacecheck}<
 endif
 " будем проверять лишние пробелы и смешанные отступы при чтении и записи файла
-:autocmd BufEnter * call CheckWhitespace()
-":autocmd BufReadPost * call CheckWhitespace()
+:autocmd BufWinEnter * call CheckWhitespace()
+" :autocmd BufNewFile * call CheckWhitespace()
+" :autocmd BufReadPost * call CheckWhitespace()
 :autocmd BufWritePost * call CheckWhitespace()
 function! CheckWhitespace()
     " проверка лишних пробелов и смешанных отступов
