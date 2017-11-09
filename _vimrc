@@ -88,10 +88,10 @@ nnoremap <F12> :b! <C-Z>
 " сохранить всё и выйти
 nnoremap <silent> <F10> :wqa<CR>
 " k и g перемещают курсор на одну экранную строку, а gk и gj - на 1 фактическую
-nnoremap k gk
-nnoremap gk k
-nnoremap j gj
-nnoremap gj j
+noremap k gk
+noremap gk k
+noremap j gj
+noremap gj j
 " назначим горячие клавиши для обхода списков:
 " переход по буферам:
 nnoremap <silent> [b :bprevious<CR>
@@ -192,7 +192,8 @@ let s:c_compiler='gcc'  " выберем компилятор для c
 if (s:c_compiler == 'gcc' && (s:platform == 'windows'))
     " GCC
     " определим программу, вызываемую командой make для файлов c (GCC)
-    let s:compile_gcc_command = 'gcc -Wall % -lsqlite3 -mwindows -o %:r.exe'
+    let s:compile_gcc_command = 'gcc -Wall % -lsqlite3 -lopengl32 -lfreeglut '
+        \.'-lglu32 -lglew32 -mwindows -o %:r.exe'
     autocmd FileType c let &l:makeprg=s:compile_gcc_command
     " добавим хоткей для генерации меток по включаемым файлам:
     let s:MinGwIncludeDir='C:\MinGW\include'
@@ -200,6 +201,10 @@ if (s:c_compiler == 'gcc' && (s:platform == 'windows'))
                       \.'"'.s:MinGwIncludeDir.'\windef.h" '
                       \.'"'.s:MinGwIncludeDir.'\windows.h" '
                       \.'"'.s:MinGwIncludeDir.'\winuser.h" '
+                      \.'"'.s:MinGwIncludeDir.'GL\gl.h" '
+                      \.'"'.s:MinGwIncludeDir.'GL\glu.h" '
+                      \.'"'.s:MinGwIncludeDir.'GL\freeglut.h" '
+                      \.'"'.s:MinGwIncludeDir.'GL\glext.h" '
     nnoremap <F2> :execute GccUpdateTags<CR><CR>
     " научим vim распознавать вывод, генерируемый компилятором GCC
     autocmd FileType c setlocal errorformat=
