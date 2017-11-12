@@ -8,6 +8,7 @@ set omnifunc=syntaxcomplete#Complete  " контекстное автодопо�
 set shortmess+=I  " отключаем детей Уганды
 set background=dark  " установим фон
 " определим платформу, под которой запущен vim
+" префикс s сделает переменную локальной для скрипта :h internal-variables
 let s:platform = 'unknown'
 if (has('win32') || has('win64'))
     let s:platform = 'windows'
@@ -158,101 +159,22 @@ set tags+=include_tags
 " автоскрытие справки по текущему тегу после выбора:
 autocmd CompleteDone * pclose
 " КОМПИЛЯЦИЯ И ЗАПУСК
+let s:c_compiler='gcc'  " выберем компилятор для c
+" определим программу, вызываемую командой make для файлов c
+" префикс l установит опцию только для текущего буфера - аналог setlocal
+" autocmd FileType c let &l:makeprg='make'
 " назначим на <F5> компиляцию и запуск для файлов C, C++
 autocmd FileType c,cpp nnoremap <buffer> <F5> :execute 'w'<CR>
-    \:execute '!cls'<CR>:execute 'lmake'<CR>:execute '!%:r.exe'<CR>
-" КОМПИЛЯЦИЯ C++
-if (s:platform == 'windows')
-    " определим программу, вызываемую командой make для файлов cpp (GCC)
-    let s:compile_cpp_command = 'g++ -O2 % -o %:r'
-    let s:cpp_standard_flags = '-Wall -Wextra'
-    let s:cpp11_flags = '-std=c++11'
-    let s:extra_flags = '-l sqlite3 -mwindows'
-    let s:compile_cpp_command = join([s:compile_cpp_command,
-        \ s:cpp_standard_flags, s:cpp11_flags, s:extra_flags], ' ')
-    autocmd FileType cpp let &l:makeprg=s:compile_cpp_command
-    " добавим хоткей для генерации меток по включаемым файлам:
-    let s:MinGwIncludeDir='C:\MinGW\include'
-    let GccUpdateTags=s:UpdateIncludeTags
-                      \.'"'.s:MinGwIncludeDir.'\sqlite3.h" '
-                      \.'"'.s:MinGwIncludeDir.'\windef.h" '
-                      \.'"'.s:MinGwIncludeDir.'\windows.h" '
-                      \.'"'.s:MinGwIncludeDir.'\winuser.h" '
-    nnoremap <F2> :execute GccUpdateTags<CR><CR>
-    " научим vim распознавать вывод, генерируемый компилятором GCC
-    autocmd FileType cpp setlocal errorformat=
-        \%W%f:%l:%c:\ warning:\ %m,%Z%m,
-        \%E%f:%l:%c:\ error:\ %m,%Z%m,
-        \%I%f:%l:%c:\ note:\ %m,%Z%m,
-        \%A%f:%l:%c:\ %m,%Z%m,
-        \%-G%.%#
-endif
-" КОМПИЛЯЦИЯ C
-let s:c_compiler='gcc'  " выберем компилятор для c
-if (s:c_compiler == 'gcc' && (s:platform == 'windows'))
-    " GCC
-    " определим программу, вызываемую командой make для файлов c (GCC)
-    let s:compile_gcc_command = 'gcc -Wall % -lsqlite3 -lopengl32 -lfreeglut '
-        \.'-lglu32 -lglew32 -mwindows -o %:r.exe'
-    autocmd FileType c let &l:makeprg=s:compile_gcc_command
-    " добавим хоткей для генерации меток по включаемым файлам:
-    let s:MinGwIncludeDir='C:\MinGW\include'
-    let GccUpdateTags=s:UpdateIncludeTags
-                      \.'"'.s:MinGwIncludeDir.'\windef.h" '
-                      \.'"'.s:MinGwIncludeDir.'\windows.h" '
-                      \.'"'.s:MinGwIncludeDir.'\winuser.h" '
-                      \.'"'.s:MinGwIncludeDir.'GL\gl.h" '
-                      \.'"'.s:MinGwIncludeDir.'GL\glu.h" '
-                      \.'"'.s:MinGwIncludeDir.'GL\freeglut.h" '
-                      \.'"'.s:MinGwIncludeDir.'GL\glext.h" '
-    nnoremap <F2> :execute GccUpdateTags<CR><CR>
-    " научим vim распознавать вывод, генерируемый компилятором GCC
-    autocmd FileType c setlocal errorformat=
-        \%W%f:%l:%c:\ warning:\ %m,%Z%m,
-        \%E%f:%l:%c:\ error:\ %m,%Z%m,
-        \%I%f:%l:%c:\ note:\ %m,%Z%m,
-        \%A%f:%l:%c:\ %m,%Z%m,
-        \%-G%.%#
-elseif (s:c_compiler == 'PellesC' && (s:platform == 'windows'))
-    " PELLES C
-    " определим программу, вызываемую командой make для файлов c (PellesC)
-    " сгенерируем команду для сборки, должно получиться что-то типа:
-    " cc -Tx86-coff -Ot -W1 -Ze -std:C11 %
-    "   /I"C:\Program Files\PellesC\Include\"
-    "   /I"C:\Program Files\PellesC\Include\Win"
-    "   /libpath:"C:\Program Files\PellesC\Lib\"
-    "   /libpath:"C:\Program Files\PellesC\Lib\Win\"
-    "   kernel32.lib user32.lib gdi32.lib comctl32.lib comdlg32.lib
-    "   advapi32.lib delayimp.lib
-    " префикс s сделает переменную локальной для скрипта :h internal-variables
-    let s:PellesCDir='C:\Program Files\PellesC'
-    let s:PellesCOptions=' -Ot -W1 -Ze -std:C11 '
-    let s:PellesCInclude=' /I"'.s:PellesCDir.'\Include\" '
-                         \.'/I"'.s:PellesCDir.'\Include\Win" '
-    let s:PellesCxLibPath=' /libpath:"'.s:PellesCDir.'\Lib\"'
-    let s:PellesCx86LibPath=s:PellesCxLibPath.' /libpath:"'.s:PellesCDir
-                            \.'\Lib\Win\"'
-    let s:PellesCx64LibPath=s:PellesCxLibPath
-                            \.' /libpath:"'.s:PellesCDir.'\Lib\Win64\"'
-    let s:PellesCLibraries=' kernel32.lib user32.lib gdi32.lib comctl32.lib
-                           \ comdlg32.lib advapi32.lib '
-    let s:PellesCx86Libraries=s:PellesCLibraries.'delayimp.lib'
-    let s:PellesCx64Libraries=s:PellesCLibraries.'delayimp64.lib'
-    let s:PellesCCompileX86='cc -Tx86-coff'.s:PellesCOptions.'%'
-                            \.s:PellesCInclude.s:PellesCx86LibPath
-                            \.s:PellesCx86Libraries
-    let s:PellesCCompileX64='cc -Tx64-coff'.s:PellesCOptions.'%'
-                            \.s:PellesCInclude.s:PellesCx64LibPath
-                            \.s:PellesCx64Libraries
-    " префикс l установит опцию только для текущего буфера - аналог setlocal
-    autocmd FileType c let &l:makeprg=s:PellesCCompileX86
-    " добавим хоткей для генерации меток по включаемым файлам:
-    let PellesCUpdateTags=s:UpdateIncludeTags
-                          \.'"'.s:PellesCDir.'\Include\Win\fci.h" '
-                          \.'"'.s:PellesCDir.'\Include\Win\windef.h" '
-                          \.'"'.s:PellesCDir.'\Include\Win\windows.h" '
-                          \.'"'.s:PellesCDir.'\Include\Win\winuser.h" '
-    nnoremap <F2> :execute PellesCUpdateTags<CR><CR>
+    \:execute '!cls'<CR>:execute 'lmake'<CR>:execute '!make run'<CR>
+autocmd FileType c,cpp nnoremap <F2> :execute '!make tags'<CR><CR>
+" научим vim распознавать вывод, генерируемый компилятором gcc/g++
+autocmd FileType c,cpp setlocal errorformat=
+    \%W%f:%l:%c:\ warning:\ %m,%Z%m,
+    \%E%f:%l:%c:\ error:\ %m,%Z%m,
+    \%I%f:%l:%c:\ note:\ %m,%Z%m,
+    \%A%f:%l:%c:\ %m,%Z%m,
+    \%-G%.%#
+if (s:c_compiler == 'PellesC' && (s:platform == 'windows'))
     " научим vim распознавать вывод, генерируемый компилятором PellesC
     autocmd FileType c setlocal errorformat=
         \%f(%l):\ %trror\ #%n:\ %m,
