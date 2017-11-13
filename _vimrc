@@ -152,9 +152,7 @@ endfunction
 " автообновление тегов при сохранении файлов C, C++
 :autocmd FileType c,cpp autocmd BufWritePost *
     \ call system("ctags  -R --fields=+iaS --extra=+q")
-" команда генерации меток по включаемым файлам:
-let s:UpdateIncludeTags='!ctags -f include_tags -R --fields=+iaS --extra=+q '
-" для контекстного автодополнения подключим теги для включаемым файлам:
+" для контекстного автодополнения подключим теги по включаемым файлам:
 set tags+=include_tags
 " автоскрытие справки по текущему тегу после выбора:
 autocmd CompleteDone * pclose
