@@ -1,19 +1,16 @@
 CC = gcc
-CXX = g++
 GLFLAGS = -lglew32 -lfreeglut -lopengl32 -lglu32
 SQLITEFLAGS = -lsqlite3
 WINFLAGS = -mwindows
-CFLAGS = -O2 -march=native -Wall -static $(WINFLAGS)
-CXXFLAGS = $(CFLAGS)
-CSOURCES = $(wildcard *.c)
-CXXSOURCES = $(wildcard *.cpp)
-OBJECTS = $(CSOURCES:.c=.o) $(CXXSOURCES:.cpp=.o)
+FLAGS = -O2 -march=native -Wall -static $(WINFLAGS)
+SOURCES = $(wildcard *.c)
+OBJECTS = $(SOURCES:.c=.o)
 EXECUTABLE = myproject.exe
 
-all: $(CSOURCES) $(EXECUTABLE)
+all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $(OBJECTS) -o $@ $(CFLAGS)
+	$(CC) $(OBJECTS) -o $@ $(FLAGS)
 
 clean:
 	rm -rf *.o $(EXECUTABLE) include_tags tags
@@ -23,6 +20,6 @@ run:
 
 tags:
 	ctags -f include_tags -R --c-kinds=+px --fields=+iaS --extra=+q \
-		$$(gcc -M $(CSOURCES) $(CXXSOURCES))
+		$$($(CC) -M $(SOURCES))
 
 .PHONY: clean tags
