@@ -66,7 +66,7 @@ elseif (s:platform == 'linux')
 endif
 set number  " отображать номера строк
 set laststatus=2  " всегда показывать строку статуса
-set hlsearch is " подсвечивать результаты поиска
+set hlsearch incsearch " подсвечивать результаты поиска
 set tabstop=4  " количество пробелов в TAB
 set shiftwidth=4  " количество пробелов в TAB при добавлении
 set expandtab  " заменять TAB на пробелы
@@ -157,10 +157,26 @@ set tags+=include_tags
 " автоскрытие справки по текущему тегу после выбора:
 autocmd CompleteDone * pclose
 " КОМПИЛЯЦИЯ И ЗАПУСК
-let s:c_compiler='gcc'  " выберем компилятор для c
-" определим программу, вызываемую командой make для файлов c
+" PlantUML
+" ассоциируем *.pu и *plantuml с plantuml
+autocmd BufRead,BufNewFile *.pu,*.plantuml set filetype=plantuml
+autocmd FileType plantuml nnoremap <buffer> <F5>
+    \ :execute 'w'<CR>:execute '!plantuml %'<CR>
+    \ :execute '!gthumb %:r.png 2> /dev/null'<CR>
+" Python
+" определим программу, вызываемую командой make для файлов python
 " префикс l установит опцию только для текущего буфера - аналог setlocal
-" autocmd FileType c let &l:makeprg='make'
+autocmd FileType python let &l:makeprg='python3 %'
+autocmd FileType python nnoremap <buffer> <F5>
+    \ :execute 'w'<CR>:execute '!cls'<CR>:execute 'lmake'<CR>
+" научим vim распознавать вывод, генерируемый интерпретатором python
+autocmd FileType python setlocal errorformat=
+    \%C\ %.%#,
+    \%A\ \ File\ \"%f\"\\,
+    \\ line\ %l%.%#,
+    \%Z%[%^\ ]%\\@=%m
+" C, C++
+let s:c_compiler='gcc'  " выберем компилятор для c
 " назначим на <F5> компиляцию и запуск для файлов C, C++
 autocmd FileType c,cpp nnoremap <buffer> <F5> :execute 'w'<CR>
     \:execute '!cls'<CR>:execute 'lmake'<CR>:execute '!make run'<CR>
