@@ -73,6 +73,7 @@ set expandtab  " заменять TAB на пробелы
 set smartindent  " включим автоотступы
 set smarttab  " умные отступы (например, удалять по 4 пробела по backspace)
 set backspace=2  " фиксим неработающий backspace
+set path+=./**  " добавим текущий каталог и подкаталоги к путям поиска файлов
 " восстановить позицию курсора с последнего сеанса работы
 au BufReadPost *
     \ if line("'\"") > 0 && line("'\"") <= line("$") &&
@@ -130,28 +131,28 @@ autocmd QuickFixCmdPost l* nested lwindow
 " показать/скрыть окно со списком результатов
 nnoremap <silent> <F7> :call <SID>QFixToggle()<CR>
 function! s:QFixToggle()
-    if exists("b:qwindow")
+    if exists("g:qwindow")
         cclose
-        unlet b:qwindow
+        unlet g:qwindow
     else
         copen 10
-        let b:qwindow=1
+        let g:qwindow=1
     endif
 endfunction
 " показать/скрыть окно со списком адресов
 nnoremap <silent> <F6> :call <SID>LFixToggle()<CR>
 function! s:LFixToggle()
-    if exists("b:lwindow")
+    if exists("g:lwindow")
         lclose
-        unlet b:lwindow
+        unlet g:lwindow
     else
         lopen 10
-        let b:lwindow=1
+        let g:lwindow=1
     endif
 endfunction
 " автообновление тегов при сохранении файлов C, C++
 :autocmd FileType c,cpp autocmd BufWritePost *
-    \ call system("ctags  -R --fields=+iaS --extra=+q")
+    \ call system("ctags --languages=C,C++ -R --fields=+iaS --extra=+q")
 " для контекстного автодополнения подключим теги по включаемым файлам:
 set tags+=include_tags
 " автоскрытие справки по текущему тегу после выбора:
