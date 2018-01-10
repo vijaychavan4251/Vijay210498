@@ -151,8 +151,8 @@ function! s:LFixToggle()
     endif
 endfunction
 " автообновление тегов при сохранении файлов C, C++
-:autocmd FileType c,cpp autocmd BufWritePost *
-    \ call system("ctags --languages=C,C++ -R --fields=+iaS --extra=+q")
+" :autocmd FileType c,cpp autocmd BufWritePost *
+"     \ call system("ctags --languages=C,C++ -R --fields=+iaS --extra=+q")
 " для контекстного автодополнения подключим теги по включаемым файлам:
 set tags+=include_tags
 " автоскрытие справки по текущему тегу после выбора:
