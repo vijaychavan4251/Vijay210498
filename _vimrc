@@ -4,7 +4,6 @@ filetype plugin on
 " загрузим плагины
 runtime macros/matchit.vim  " переход между парными ключевыми словами
 syntax on  " включим подсветку синтаксиса
-set omnifunc=syntaxcomplete#Complete  " контекстное автодополнение <C-X><C-O>
 set shortmess+=I  " отключаем детей Уганды
 set background=dark  " установим фон
 " определим платформу, под которой запущен vim
@@ -157,7 +156,14 @@ endfunction
 set tags+=include_tags
 " автоскрытие справки по текущему тегу после выбора:
 autocmd CompleteDone * pclose
+" автокомплит для Python3
+autocmd FileType python setlocal omnifunc=python3complete#Complete
 " КОМПИЛЯЦИЯ И ЗАПУСК
+if (s:platform == 'windows')
+    let cls='!cls'
+elseif (s:platform == 'linux')
+    let cls = '!clear'
+endif
 " PlantUML
 " ассоциируем *.pu и *plantuml с plantuml
 autocmd BufRead,BufNewFile *.pu,*.plantuml set filetype=plantuml
@@ -169,7 +175,7 @@ autocmd FileType plantuml nnoremap <buffer> <F5>
 " префикс l установит опцию только для текущего буфера - аналог setlocal
 autocmd FileType python let &l:makeprg='python3 %'
 autocmd FileType python nnoremap <buffer> <F5>
-    \ :execute 'w'<CR>:execute '!cls'<CR>:execute 'lmake'<CR>
+    \ :execute 'w'<CR>:execute cls<CR>:execute 'lmake'<CR>
 " научим vim распознавать вывод, генерируемый интерпретатором python
 autocmd FileType python setlocal errorformat=
     \%C\ %.%#,
@@ -180,7 +186,7 @@ autocmd FileType python setlocal errorformat=
 let s:c_compiler='gcc'  " выберем компилятор для c
 " назначим на <F5> компиляцию и запуск для файлов C, C++
 autocmd FileType c,cpp nnoremap <buffer> <F5> :execute 'w'<CR>
-    \:execute '!cls'<CR>:execute 'lmake'<CR>:execute '!make run'<CR>
+    \:execute cls<CR>:execute 'lmake'<CR>:execute '!make run'<CR>
 autocmd FileType c,cpp nnoremap <F2> :execute '!make tags'<CR><CR>
 " научим vim распознавать вывод, генерируемый компилятором gcc/g++
 autocmd FileType c,cpp setlocal errorformat=
