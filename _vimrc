@@ -1,11 +1,6 @@
 set nocompatible  " включить улучшенный режим, несовместимый с vi
 " автоопределение типа файла и загрузка плагина для некоторых типов:
 filetype plugin on
-" загрузим плагины
-runtime macros/matchit.vim  " переход между парными ключевыми словами
-syntax on  " включим подсветку синтаксиса
-set shortmess+=I  " отключаем детей Уганды
-set background=dark  " установим фон
 " определим платформу, под которой запущен vim
 " префикс s сделает переменную локальной для скрипта :h internal-variables
 let s:platform = 'unknown'
@@ -26,6 +21,52 @@ elseif (empty($DISPLAY) && (s:platform !='windows'))
 else
     let s:interface = 'con'
 endif
+" загрузим плагины
+runtime macros/matchit.vim  " переход между парными ключевыми словами
+if (s:platform == 'linux')
+    call plug#begin('~/.vim/plugged')
+    Plug 'easymotion/vim-easymotion'  " быстрая навигация по документу
+    Plug 'kien/ctrlp.vim'  " файловый менеджер
+    Plug 'SirVer/ultisnips'  " сниппеты (лежат в snippets и UltiSnips)
+    Plug 'majutsushi/tagbar'  " браузер классов, функций и т.п.
+    Plug 'vim-syntastic/syntastic'  " подсветка ошибок
+    Plug 'artur-shaik/vim-javacomplete2'  " контекстное автодополнение для java
+    Plug 'davidhalter/jedi-vim'  " контекстное автодополнение для Python
+    Plug 'Vimjas/vim-python-pep8-indent'  " отступы по PEP8 для Python
+    call plug#end()
+    " настроим плагины
+    " браузер классов/функций:
+    nnoremap <silent> <F8> :TagbarToggle<CR>
+    "let g:tagbar_vertical = 30  " выводить браузер классов внизу, а не справа
+    let g:tagbar_autofocus = 1  " автофокус на Tagbar при открытии
+    let g:tagbar_autoclose = 1  " автозакрытие Tagbar после выбора
+    " одно нажатие <Leader> для easymotion вместо двух
+    map <Leader> <Plug>(easymotion-prefix)
+    " хоткеи для сниппетов; не использовать Tab, дабы избежать конфликта с YCM
+    let g:UltiSnipsExpandTrigger="<c-b>"
+    let g:UltiSnipsJumpForwardTrigger="<c-b>"
+    let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+    " хоткеи для jedi-vim
+    let g:jedi#goto_command = "gd"
+    " настройки syntastic
+    let g:syntastic_always_populate_loc_list=1  " автозаполнение списка ошибок
+    let g:syntastic_auto_loc_list=1  " автовывод списка ошибок
+    let g:syntastic_check_enable_signs=1  " показывать метки слева
+    let g:syntastic_check_on_wq=0  " не проверять при выходе с сохранением
+    let g:syntastic_aggregate_errors = 1  " объединить ошибки всех чекеров
+    " список чекеров для python
+    let g:syntastic_python_checkers=['flake8', 'mypy', 'python']
+    " отключим syntastic при запуске
+    " let g:syntastic_mode_map = { 'mode': 'passive',
+    "     \ 'active_filetypes': [],'passive_filetypes': [] }
+    let g:syntastic_mode_map = { 'mode': 'passive' }
+    " хоткей на включение/отключение проверки
+    nnoremap <F3> :SyntasticToggleMode<CR> :w<CR>
+endif
+
+syntax on  " включим подсветку синтаксиса
+set shortmess+=I  " отключаем детей Уганды
+set background=dark  " установим фон
 if (s:interface == 'gui')  " настройки для gvim
     set guicursor+=a:blinkon0  " курсор в vim-стиле для gvim
     set guioptions-=m  " скрыть меню
@@ -72,6 +113,7 @@ set expandtab  " заменять TAB на пробелы
 set smartindent  " включим автоотступы
 set smarttab  " умные отступы (например, удалять по 4 пробела по backspace)
 set backspace=2  " фиксим неработающий backspace
+set formatoptions-=t  " отключим автоперенос строк
 set path+=./**  " добавим текущий каталог и подкаталоги к путям поиска файлов
 " восстановить позицию курсора с последнего сеанса работы
 au BufReadPost *
@@ -143,6 +185,7 @@ nnoremap <silent> <F6> :call <SID>LFixToggle()<CR>
 function! s:LFixToggle()
     if exists("g:lwindow")
         lclose
+        lclose
         unlet g:lwindow
     else
         lopen 10
@@ -156,8 +199,6 @@ endfunction
 set tags+=include_tags
 " автоскрытие справки по текущему тегу после выбора:
 autocmd CompleteDone * pclose
-" автокомплит для Python3
-autocmd FileType python setlocal omnifunc=python3complete#Complete
 " КОМПИЛЯЦИЯ И ЗАПУСК
 if (s:platform == 'windows')
     let cls='!cls'
@@ -170,18 +211,26 @@ autocmd BufRead,BufNewFile *.pu,*.plantuml set filetype=plantuml
 autocmd FileType plantuml nnoremap <buffer> <F5>
     \ :execute 'w'<CR>:execute '!plantuml %'<CR>
     \ :execute '!gthumb %:r.png 2> /dev/null'<CR>
+" автокомплит для JAVA
+autocmd FileType java setlocal omnifunc=javacomplete#Complete
+autocmd FileType java nnoremap <F2> :execute '!make tags'<CR><CR>
 " Python
 " определим программу, вызываемую командой make для файлов python
 " префикс l установит опцию только для текущего буфера - аналог setlocal
 autocmd FileType python let &l:makeprg='python3 %'
 autocmd FileType python nnoremap <buffer> <F5>
     \ :execute 'w'<CR>:execute cls<CR>:execute 'lmake'<CR>
+" автокомплит для Python3 (устарел и не поддерживается; конфликтует с jedi-vim)
+" autocmd FileType python setlocal omnifunc=python3complete#Complete
+" autocmd FileType python nnoremap <F2> :execute '!make tags'<CR><CR>
+" 950087420 17130164 711467008 20079909 22493184 36613118 225673216
 " научим vim распознавать вывод, генерируемый интерпретатором python
 autocmd FileType python setlocal errorformat=
     \%C\ %.%#,
     \%A\ \ File\ \"%f\"\\,
     \\ line\ %l%.%#,
-    \%Z%[%^\ ]%\\@=%m
+    \%Z%[%^\ ]%\\@=%m,
+    \%-G%.%#
 " C, C++
 let s:c_compiler='gcc'  " выберем компилятор для c
 " назначим на <F5> компиляцию и запуск для файлов C, C++
