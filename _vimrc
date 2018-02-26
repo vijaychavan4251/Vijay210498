@@ -43,23 +43,28 @@ if (s:platform == 'linux')
     " одно нажатие <Leader> для easymotion вместо двух
     map <Leader> <Plug>(easymotion-prefix)
     " хоткеи для сниппетов; не использовать Tab, дабы избежать конфликта с YCM
-    let g:UltiSnipsExpandTrigger="<c-b>"
-    let g:UltiSnipsJumpForwardTrigger="<c-b>"
-    let g:UltiSnipsJumpBackwardTrigger="<c-z>"
+    let g:UltiSnipsExpandTrigger = "<c-b>"
+    let g:UltiSnipsJumpForwardTrigger = "<c-b>"
+    let g:UltiSnipsJumpBackwardTrigger = "<c-z>"
     " хоткеи для jedi-vim
+    let g:jedi#show_call_signatures = 2  " показывать сигнатуры в строке команд
     let g:jedi#goto_command = "gd"
     " настройки syntastic
-    let g:syntastic_always_populate_loc_list=1  " автозаполнение списка ошибок
-    let g:syntastic_auto_loc_list=1  " автовывод списка ошибок
-    let g:syntastic_check_enable_signs=1  " показывать метки слева
-    let g:syntastic_check_on_wq=0  " не проверять при выходе с сохранением
+    let g:syntastic_always_populate_loc_list = 1  " автозаполнение списка ошибок
+    let g:syntastic_auto_loc_list = 1  " автовывод списка ошибок
+    let g:syntastic_check_enable_signs = 1  " показывать метки слева
+    let g:syntastic_auto_jump = 1  " автопереход к первой ошибке
+    let g:syntastic_check_on_wq = 0  " не проверять при выходе с сохранением
     let g:syntastic_aggregate_errors = 1  " объединить ошибки всех чекеров
     " список чекеров для python
-    let g:syntastic_python_checkers=['flake8', 'mypy', 'python']
+    let g:syntastic_python_checkers = ['flake8', 'mypy', 'pylint', 'python']
     " отключим syntastic при запуске
-    " let g:syntastic_mode_map = { 'mode': 'passive',
-    "     \ 'active_filetypes': [],'passive_filetypes': [] }
     let g:syntastic_mode_map = { 'mode': 'passive' }
+    " отключим в pylint лишние назойливые варнинги:
+    let g:syntastic_python_pylint_args = '--disable='
+        \ .'missing-docstring,'
+        \ .'too-few-public-methods,'
+        \ .'invalid-name'
     " хоткей на включение/отключение проверки
     nnoremap <F3> :SyntasticToggleMode<CR> :w<CR>
 endif
@@ -104,6 +109,7 @@ elseif (s:platform == 'linux')
         highlight ColorColumn ctermfg=red ctermbg=black
     endif
 endif
+set noshowmode  " отключить отображение режима в командной строке
 set number  " отображать номера строк
 set laststatus=2  " всегда показывать строку статуса
 set hlsearch incsearch " подсвечивать результаты поиска
@@ -217,13 +223,9 @@ autocmd FileType java nnoremap <F2> :execute '!make tags'<CR><CR>
 " Python
 " определим программу, вызываемую командой make для файлов python
 " префикс l установит опцию только для текущего буфера - аналог setlocal
-autocmd FileType python let &l:makeprg='python3 %'
+autocmd FileType python let &l:makeprg="python3 '%'"
 autocmd FileType python nnoremap <buffer> <F5>
     \ :execute 'w'<CR>:execute cls<CR>:execute 'lmake'<CR>
-" автокомплит для Python3 (устарел и не поддерживается; конфликтует с jedi-vim)
-" autocmd FileType python setlocal omnifunc=python3complete#Complete
-" autocmd FileType python nnoremap <F2> :execute '!make tags'<CR><CR>
-" 950087420 17130164 711467008 20079909 22493184 36613118 225673216
 " научим vim распознавать вывод, генерируемый интерпретатором python
 autocmd FileType python setlocal errorformat=
     \%C\ %.%#,
