@@ -62,9 +62,18 @@ if (s:platform == 'linux')
     let g:syntastic_mode_map = { 'mode': 'passive' }
     " отключим в pylint лишние назойливые варнинги:
     let g:syntastic_python_pylint_args = '--disable='
+        \ .'invalid-name,'
         \ .'missing-docstring,'
         \ .'too-few-public-methods,'
-        \ .'invalid-name'
+        \ .'too-many-ancestors,'
+        \ .'too-many-instance-attributes,'
+        \ .'too-many-public-methods,'
+        \ .'too-many-return-statements,'
+        \ .'too-many-branches,'
+        \ .'abstract-method,'
+        \ .'unsubscriptable-object '
+        \ .'--additional-builtins=_'
+    let g:syntastic_python_flake8_args = '--additional-builtins=_'
     " хоткей на включение/отключение проверки
     nnoremap <F3> :SyntasticToggleMode<CR> :w<CR>
 endif
