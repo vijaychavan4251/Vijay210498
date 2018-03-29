@@ -25,6 +25,7 @@ endif
 runtime macros/matchit.vim  " переход между парными ключевыми словами
 if (s:platform == 'linux')
     call plug#begin('~/.vim/plugged')
+    Plug 'airblade/vim-rooter'  " изменить рабочую директорию на корень проекта
     Plug 'easymotion/vim-easymotion'  " быстрая навигация по документу
     Plug 'kien/ctrlp.vim'  " файловый менеджер
     Plug 'SirVer/ultisnips'  " сниппеты (лежат в snippets и UltiSnips)
@@ -35,6 +36,12 @@ if (s:platform == 'linux')
     Plug 'Vimjas/vim-python-pep8-indent'  " отступы по PEP8 для Python
     call plug#end()
     " настроим плагины
+    " автоопределение корневой директории проекта - по наличию в ней файлов
+    let g:rooter_patterns = [
+        \'Makefile', '.git', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/']
+    let g:rooter_silent_chdir = 1  " не показывать сообщение о смене каталога
+    " автодобавление корня проекта в пути поиска javacomplete2
+    autocmd FileType java let g:JavaComplete_SourcesPath = FindRootDirectory()
     " браузер классов/функций:
     nnoremap <silent> <F8> :TagbarToggle<CR>
     "let g:tagbar_vertical = 30  " выводить браузер классов внизу, а не справа
@@ -50,7 +57,7 @@ if (s:platform == 'linux')
     let g:jedi#show_call_signatures = 2  " показывать сигнатуры в строке команд
     let g:jedi#goto_command = "gd"
     " настройки syntastic
-    let g:syntastic_always_populate_loc_list = 1  " автозаполнение списка ошибок
+    let g:syntastic_always_populate_loc_list = 1 " автозаполнение списка ошибок
     let g:syntastic_auto_loc_list = 1  " автовывод списка ошибок
     let g:syntastic_check_enable_signs = 1  " показывать метки слева
     let g:syntastic_auto_jump = 1  " автопереход к первой ошибке
@@ -74,6 +81,8 @@ if (s:platform == 'linux')
         \ .'unsubscriptable-object '
         \ .'--additional-builtins=_'
     let g:syntastic_python_flake8_args = '--additional-builtins=_'
+    " добавим каталог src в classpath для java-проектов
+    let g:syntastic_java_javac_classpath='src'
     " хоткей на включение/отключение проверки
     nnoremap <F3> :SyntasticToggleMode<CR> :w<CR>
 endif
@@ -226,9 +235,17 @@ autocmd BufRead,BufNewFile *.pu,*.plantuml set filetype=plantuml
 autocmd FileType plantuml nnoremap <buffer> <F5>
     \ :execute 'w'<CR>:execute '!plantuml %'<CR>
     \ :execute '!gthumb %:r.png 2> /dev/null'<CR>
+" JAVA
+autocmd FileType java nnoremap <buffer> <F5>
+    \ :execute 'wa'<CR>:execute cls<CR>:execute 'lmake'<CR>
 " автокомплит для JAVA
 autocmd FileType java setlocal omnifunc=javacomplete#Complete
 autocmd FileType java nnoremap <F2> :execute '!make tags'<CR><CR>
+autocmd FileType java setlocal errorformat=
+    \%A%f:%l:\ %t%*[^:]:\ %m,
+    \%-Z%p^,
+    \%+C%.%#,
+    \%-G%.%#
 " Python
 " определим программу, вызываемую командой make для файлов python
 " префикс l установит опцию только для текущего буфера - аналог setlocal
