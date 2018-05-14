@@ -25,15 +25,26 @@ endif
 runtime macros/matchit.vim  " переход между парными ключевыми словами
 if (s:platform == 'linux')
     call plug#begin('~/.vim/plugged')
-    Plug 'airblade/vim-rooter'  " изменить рабочую директорию на корень проекта
-    Plug 'easymotion/vim-easymotion'  " быстрая навигация по документу
-    Plug 'kien/ctrlp.vim'  " файловый менеджер
-    Plug 'SirVer/ultisnips'  " сниппеты (лежат в snippets и UltiSnips)
-    Plug 'majutsushi/tagbar'  " браузер классов, функций и т.п.
-    Plug 'vim-syntastic/syntastic'  " подсветка ошибок
-    Plug 'artur-shaik/vim-javacomplete2'  " контекстное автодополнение для java
-    Plug 'davidhalter/jedi-vim'  " контекстное автодополнение для Python
-    Plug 'Vimjas/vim-python-pep8-indent'  " отступы по PEP8 для Python
+    " изменить рабочую директорию на корень проекта
+    Plug 'airblade/vim-rooter'
+    " быстрая навигация по документу
+    Plug 'easymotion/vim-easymotion'
+    " файловый менеджер
+    Plug 'kien/ctrlp.vim'
+    " сниппеты (лежат в snippets и UltiSnips)
+    Plug 'SirVer/ultisnips'
+    " браузер классов, функций и т.п.
+    Plug 'majutsushi/tagbar', { 'on': 'TagbarToggle' }
+    " подсветка ошибок
+    Plug 'vim-syntastic/syntastic', { 'on': 'SyntasticToggleMode' }
+    " контекстное автодополнение для java
+    Plug 'artur-shaik/vim-javacomplete2', { 'for': 'java' }
+    " контекстное автодополнение для Python
+    Plug 'davidhalter/jedi-vim', { 'for': 'python' }
+    " отступы по PEP8 для Python
+    Plug 'Vimjas/vim-python-pep8-indent', { 'for': 'python' }
+    " Common Lisp REPL для vim
+    Plug 'kovisoft/slimv', { 'for': ['clojure', 'lisp', 'scheme' ] }
     call plug#end()
     " настроим плагины
     " автоопределение корневой директории проекта - по наличию в ней файлов
@@ -81,10 +92,14 @@ if (s:platform == 'linux')
         \ .'unsubscriptable-object '
         \ .'--additional-builtins=_'
     let g:syntastic_python_flake8_args = '--additional-builtins=_'
-    " добавим каталог src в classpath для java-проектов
-    let g:syntastic_java_javac_classpath='src'
+    " сохранять/загружать classpath из файла g:syntastic_java_javac_config_file
+    let g:syntastic_java_javac_config_file_enabled=1
     " хоткей на включение/отключение проверки
     nnoremap <F3> :SyntasticToggleMode<CR> :w<CR>
+    " строка запуска SWANK-сервера для slimv
+    let g:slimv_swank_cmd = '! screen -d -m -t REPL-SBCL sbcl '
+                \ .'--load ~/.vim/plugged/slimv/slime/start-swank.lisp'
+    let g:lisp_rainbow=1  " подсвечивать парные кавычки разными цветами
 endif
 
 syntax on  " включим подсветку синтаксиса
@@ -235,7 +250,16 @@ autocmd BufRead,BufNewFile *.pu,*.plantuml set filetype=plantuml
 autocmd FileType plantuml nnoremap <buffer> <F5>
     \ :execute 'w'<CR>:execute '!plantuml %'<CR>
     \ :execute '!gthumb %:r.png 2> /dev/null'<CR>
+"JavaScript
+autocmd FileType javascript let &l:makeprg="node '%'"
+autocmd FileType javascript nnoremap <buffer> <F5>
+    \ :execute 'w'<CR>:execute cls<CR>:execute 'lmake'<CR>
+autocmd FileType javascript setlocal errorformat=
+    \%A%f:%l,
+    \%-Z%p^,
+    \%-G%.%#
 " JAVA
+" autocmd FileType java let &l:makeprg="make run"
 autocmd FileType java nnoremap <buffer> <F5>
     \ :execute 'wa'<CR>:execute cls<CR>:execute 'lmake'<CR>
 " автокомплит для JAVA
