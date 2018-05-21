@@ -26,7 +26,7 @@ runtime macros/matchit.vim  " переход между парными ключ�
 if (s:platform == 'linux')
     call plug#begin('~/.vim/plugged')
     " изменить рабочую директорию на корень проекта
-    Plug 'airblade/vim-rooter'
+    Plug 'airblade/vim-rooter', { 'for': ['c', 'cpp', 'java', 'python'] }
     " быстрая навигация по документу
     Plug 'easymotion/vim-easymotion'
     " файловый менеджер
@@ -45,6 +45,8 @@ if (s:platform == 'linux')
     Plug 'Vimjas/vim-python-pep8-indent', { 'for': 'python' }
     " Common Lisp REPL для vim
     Plug 'kovisoft/slimv', { 'for': ['clojure', 'lisp', 'scheme' ] }
+    " REPL для Python, JavaScript, C++ и др.
+    Plug 'metakirby5/codi.vim', { 'on': 'Codi' }
     call plug#end()
     " настроим плагины
     " автоопределение корневой директории проекта - по наличию в ней файлов
@@ -127,7 +129,9 @@ if (s:platform == 'windows')
         highlight ColorColumn ctermfg=Brown ctermbg=DarkBlue
     endif
 elseif (s:platform == 'linux')
-    if (s:interface == 'con')
+    if (s:interface == 'gui')  " настройки для gvim
+        set guifont=xos4\ Terminus\ 20
+    elseif (s:interface == 'con')
         set t_Co=256  " использовать в иксах 256 цветов
         colorscheme solarized  " установим цветовую схему
         set colorcolumn=80  " подсветить колонку 80
@@ -456,7 +460,7 @@ nnoremap <silent> <script> <C-v> <C-v>
     \<SID>SetStatuslineColorVisual<right><left>
 function! s:SetStatuslineColorVisual()
     " изменим интервал обновления для функции CursorHold
-    set updatetime=0
+    set updatetime=1
     execute 'highlight statusline'
         \.' ctermbg='.s:statusline_visual_color_ctermbg
         \.' ctermfg='.s:statusline_visual_color_ctermfg
@@ -492,7 +496,7 @@ endfunction
 " чтобы цвет строки статуса менялся сразу после выхода из Insert/Replace mode
 autocmd InsertLeave * call <SID>ResetStatuslineColor()
 " чтобы цвет строки статуса менялся сразу после выхода из визуального режима,
-" повесим функцию на отсутствие нажатий (интервал был ранее выставлен в 0)
+" повесим функцию на отсутствие нажатий (интервал был ранее выставлен в 1)
 autocmd CursorHold * call <SID>ResetStatuslineColor()
 function! s:ResetStatuslineColor()
     set updatetime=4000
