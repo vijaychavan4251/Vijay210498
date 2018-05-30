@@ -1,0 +1,52 @@
+CC = gcc
+CXX = g++
+GLFLAGS = -lglew32 -lfreeglut -lopengl32 -lglu32
+SQLITEFLAGS = -lsqlite3
+WINFLAGS = -lcomctl32 -mwindows -lwinmm -lshlwapi
+EXCLUDE_WARNGINS = -Wno-missing-field-initializers \
+	-Wno-unused-parameter
+COMMON_FLAGS = -O2 -march=native -Wall -Wextra -static
+# SRC_ENCODING = -finput-charset=utf-8
+SRC_ENCODING = -finput-charset=cp1251
+CFLAGS = $(COMMON_FLAGS) $(SRC_ENCODING) ${EXCLUDE_WARNGINS} $(WINFLAGS)
+# CPPFLAGS = $(COMMON_FLAGS) ${EXCLUDE_WARNGINS} $(WINFLAGS)
+SOURCES = $(wildcard *.c) $(wildcard view/*.c) $(wildcard data/*.c) \
+	$(wildcard domain/*.c)
+OBJECTS = $(SOURCES:.c=.o)
+EXECUTABLE = myproject.exe
+OUTPUT = bin
+RESOURCE = myproject.res
+
+all: $(SOURCES) $(EXECUTABLE)
+
+install: $(EXECUTABLE) img sounds
+	mkdir $(OUTPUT)
+	cp $(EXECUTABLE) $(OUTPUT)
+	cp -r img $(OUTPUT)
+	cp -r sounds $(OUTPUT)
+
+$(EXECUTABLE): $(OBJECTS) $(RESOURCE)
+	$(CC) $(OBJECTS) $(RESOURCE) $(CFLAGS) -o $@
+
+plusplus: $(SOURCES) $(RESOURCE)
+	$(CXX) $(SOURCES) $(RESOURCE) $(CFLAGS) -o $(EXECUTABLE)
+
+$(RESOURCE): myproject.rc myproject.xml myproject.ico
+	windres -O coff -o $(RESOURCE) -i myproject.rc
+
+clean:
+	rm -rf ${OBJECTS} $(EXECUTABLE) include_tags tags */tags $(OUTPUT) Debug \
+		myproject.tag myproject.ppx output $(RESOURCE) myproject.ini \
+		myproject.sav myproject*.dat myproject.log .vs x64 Release
+
+run: $(EXECUTABLE)
+	$(EXECUTABLE)
+
+tags:
+	ctags -f tags -R --c-kinds=+px --fields=+iaS --extra=+q \
+		$$($(CC) -M $(SOURCES) | \
+		sed -e 's/^.*o://' -e 's/^\s//' -e 's/\s\\\$$//' -e 's/ /\r\n/g' | \
+		awk '!seen[$$0]++')
+
+.PHONY: clean tags
+

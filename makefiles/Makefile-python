@@ -1,0 +1,43 @@
+SOURCES = $(wildcard *.py) $(wildcard */*.py)
+EXECUTABLE = myproject.pyw
+INTERPRETER = python3
+
+all: run
+
+clean:
+	rm -rf tags include_tags __pycache__ */__pycache__ */*/__pycache__ \
+		*.png .mypy_cache */.mypy_cache */*/.mypy_cache *.ini *.dat *.sav \
+		*.cfg *.log .coverage htmlcov
+
+run: $(EXECUTABLE)
+	$(INTERPRETER) ${EXECUTABLE)
+
+tests:
+	$(INTERPRETER) test_all.py
+
+coverage_measure:
+	coverage run test_all.py
+	coverage report
+
+coverage_measure_html:
+	coverage run test_all.py
+	coverage html
+	@xdg-open htmlcov/index.html
+
+tags:
+	ctags -f tags -R --fields=+iaS --extra=+q $(SOURCES)
+
+include_tags:
+	ctags -f include_tags -R --languages=python --fields=+iaS --extra=+q \
+		/usr/lib/python3.4/
+
+uml: $(SOURCES)
+	# pyreverse -o png -c Domain -mn myproject.pyw
+	pyreverse -c Domain -mn myproject.pyw
+	dot -Tpng -Gfontname="PT Sans" -Gfontsize=15 \
+		-Nfontname="PT Sans" -Nfontsize=15 \
+		-Efontname="PT Sans" -Efontsize=15 \
+		Domain.dot -o Domain.png
+	rm Domain.dot
+
+.PHONY: clean tags tests

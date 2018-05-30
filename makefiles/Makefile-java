@@ -1,0 +1,70 @@
+GCJ = javac
+INTERPRETER = java
+SOURCEPATH = src
+CLASSPATH = build/classes
+LOCALE = myproject/locale
+EXECUTABLE = myproject/Mainclass
+JUNIT_RUNNER = org.junit.runner.JUnitCore
+JUNIT_LIBS = /usr/share/junit-4/lib/junit.jar
+JUNIT_LIBS := $(JUNIT_LIBS):/usr/share/hamcrest-core-1.3/lib/hamcrest-core.jar
+JCOV_JAR = ./util/jcov.jar
+JCOV_FILE_SAVER_JAR = ./util/jcov_file_saver.jar
+TRANSLATIONS = $(notdir $(wildcard $(SOURCEPATH)/$(LOCALE)/*.properties))
+
+all: $(CLASSPATH)/$(EXECUTABLE).class $(CLASSPATH)/$(LOCALE)
+
+jar: all
+	jar cfe myproject.jar $(EXECUTABLE) -C $(CLASSPATH) myproject sounds img
+
+run: jar
+	$(INTERPRETER) -jar myproject.jar
+
+$(CLASSPATH)/$(EXECUTABLE).class: $(CLASSPATH)
+	$(GCJ) -sourcepath $(SOURCEPATH) -encoding UTF8 \
+		$(SOURCEPATH)/$(EXECUTABLE).java -d $(CLASSPATH)
+
+$(CLASSPATH):
+	mkdir -p $(CLASSPATH)
+
+$(CLASSPATH)/$(LOCALE):
+	# cp -r $(SOURCEPATH)/$(LOCALE) $(CLASSPATH)/$(LOCALE)
+	mkdir $(CLASSPATH)/$(LOCALE)
+	@for file in $(TRANSLATIONS) ; do \
+		native2ascii -encoding UTF-8 \
+			$(SOURCEPATH)/$(LOCALE)/$$file \
+			$(CLASSPATH)/$(LOCALE)/$$file ; \
+		done
+
+all_tests_run: $(CLASSPATH) all_tests
+	$(INTERPRETER) -cp $(JUNIT_LIBS):$(CLASSPATH) \
+		myproject.tests.unit.AllTests
+
+all_tests:
+	$(GCJ) -cp $(JUNIT_LIBS) -sourcepath $(SOURCEPATH) -d $(CLASSPATH) \
+		src/myproject/tests/unit/AllTests.java
+
+board_test_run: board_test
+	$(INTERPRETER) -cp $(JUNIT_LIBS):$(CLASSPATH) $(JUNIT_RUNNER) \
+		myproject.tests.unit.domain.LeaderBoardTests
+
+board_test:
+	$(GCJ) -cp $(JUNIT_LIBS) -sourcepath $(SOURCEPATH) -d $(CLASSPATH) \
+		src/myproject/tests/unit/domain/LeaderBoardTests.java
+
+coverage_measure: all all_tests
+	$(INTERPRETER) -jar $(JCOV_JAR) Instr -o instr/classes -t template.xml \
+		-i myproject -e myproject.tests $(CLASSPATH)
+	$(INTERPRETER) -cp instr/classes:$(JCOV_FILE_SAVER_JAR):$(JUNIT_LIBS) \
+		myproject.tests.unit.AllTests
+	$(INTERPRETER) -jar $(JCOV_JAR) Merger -o merge.xml template.xml result.xml
+	$(INTERPRETER) -jar $(JCOV_JAR) RepGen -src $(SOURCEPATH) merge.xml
+	@xdg-open report/index.html
+
+clean:
+	rm -rf tags $(CLASSPATH)/* *.log.* *.jar *.ini *.sav *.dat *.xml report \
+		instr
+
+tags:
+	ctags -R --languages=Java --fields=+iaS --extra=+q
+
+.PHONY: clean tags $(CLASSPATH)/$(EXECUTABLE).class

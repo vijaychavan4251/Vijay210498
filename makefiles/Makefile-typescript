@@ -1,0 +1,27 @@
+SRC_DIR = src
+SOURCES = $(wildcard $(SRC_DIR)/*.ts) $(wildcard $(SRC_DIR)/*/*.ts)
+BUILD = build
+EXECUTABLE = myproject
+INTERPRETER = xdg-open
+
+all: run
+
+clean:
+	rm -rf tags $(BUILD)/*.js $(BUILD)/*.ts
+
+run: build
+	$(INTERPRETER) $(BUILD)/$(EXECUTABLE).html > /dev/null 2> /dev/null
+
+build: link
+	tsc -t ES5 $(BUILD)/$(EXECUTABLE).ts -outFile $(BUILD)/$(EXECUTABLE).js
+	rm $(BUILD)/$(EXECUTABLE).ts
+
+link:
+	# remove imports and exports from sources and concat them into one file
+	sed '/^[ \t]*import.*$$/d; s/^[ \t]*export //' \
+		$(SOURCES) > $(BUILD)/$(EXECUTABLE).ts
+
+tags:
+	ctags -f tags -R --fields=+iaS --extras=+q $(SOURCES)
+
+.PHONY: clean tags link build

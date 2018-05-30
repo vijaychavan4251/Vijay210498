@@ -1,0 +1,23 @@
+SRC_DIR = src
+SOURCES = $(wildcard $(SRC_DIR)/*.js) $(wildcard $(SRC_DIR)/*/*.js)
+BUILD = build
+EXECUTABLE = myproject
+INTERPRETER = xdg-open
+
+all: run
+
+clean:
+	rm -rf tags $(BUILD)/$(EXECUTABLE).js
+
+run: link
+	$(INTERPRETER) $(BUILD)/$(EXECUTABLE).html > /dev/null 2> /dev/null
+
+link:
+	# remove imports and exports from sources and concat them into one file
+	sed '/^[ \t]*import.*$$/d; s/^[ \t]*export //' \
+		$(SOURCES) > $(BUILD)/$(EXECUTABLE).js
+
+tags:
+	ctags -f tags -R --fields=+iaS --extras=+q $(SOURCES)
+
+.PHONY: clean tags link
