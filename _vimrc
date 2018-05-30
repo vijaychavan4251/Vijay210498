@@ -27,7 +27,8 @@ if (s:platform == 'linux')
     call plug#begin('~/.vim/plugged')
     " изменить рабочую директорию на корень проекта
     Plug 'airblade/vim-rooter', { 'for':
-                \ ['c', 'cpp', 'java', 'javascript', 'python'] }
+                \ ['c', 'cpp', 'java', 'javascript', 'python',
+                \ 'typescript'] }
     " быстрая навигация по документу
     Plug 'easymotion/vim-easymotion'
     " файловый менеджер
