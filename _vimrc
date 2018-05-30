@@ -26,7 +26,8 @@ runtime macros/matchit.vim  " переход между парными ключ�
 if (s:platform == 'linux')
     call plug#begin('~/.vim/plugged')
     " изменить рабочую директорию на корень проекта
-    Plug 'airblade/vim-rooter', { 'for': ['c', 'cpp', 'java', 'python'] }
+    Plug 'airblade/vim-rooter', { 'for':
+                \ ['c', 'cpp', 'java', 'javascript', 'python'] }
     " быстрая навигация по документу
     Plug 'easymotion/vim-easymotion'
     " файловый менеджер
@@ -47,6 +48,14 @@ if (s:platform == 'linux')
     Plug 'kovisoft/slimv', { 'for': ['clojure', 'lisp', 'scheme' ] }
     " REPL для Python, JavaScript, C++ и др.
     Plug 'metakirby5/codi.vim', { 'on': 'Codi' }
+    " подсветка синтаксиса для JavaScript
+    Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
+    " контекстное автодополнение для JavaScript
+    Plug 'ternjs/tern_for_vim', { 'for': 'javascript' }
+    " подсветка синтаксиса для TypeScript
+    Plug 'leafgarland/typescript-vim', { 'for': 'typescript' }
+    " контекстное автодополнение для TypeScript
+    Plug 'Quramy/tsuquyomi', { 'for': 'typescript' }
     call plug#end()
     " настроим плагины
     " автоопределение корневой директории проекта - по наличию в ней файлов
@@ -69,6 +78,10 @@ if (s:platform == 'linux')
     " хоткеи для jedi-vim
     let g:jedi#show_call_signatures = 2  " показывать сигнатуры в строке команд
     let g:jedi#goto_command = "gd"
+    autocmd FileType python nnoremap <buffer> <C-]> :call jedi#goto()<CR>
+    " хоткеи для tern_for_vim
+    autocmd FileType javascript nnoremap <buffer> gd :TernDef<CR>
+    " autocmd FileType javascript nnoremap <buffer> <C-]> :TernDef<CR>
     " настройки syntastic
     let g:syntastic_always_populate_loc_list = 1 " автозаполнение списка ошибок
     let g:syntastic_auto_loc_list = 1  " автовывод списка ошибок
@@ -76,8 +89,12 @@ if (s:platform == 'linux')
     let g:syntastic_auto_jump = 1  " автопереход к первой ошибке
     let g:syntastic_check_on_wq = 0  " не проверять при выходе с сохранением
     let g:syntastic_aggregate_errors = 1  " объединить ошибки всех чекеров
+    " список чекеров для JavaScript
+    let g:syntastic_javascript_checkers = ['eslint', 'flow']
     " список чекеров для python
     let g:syntastic_python_checkers = ['flake8', 'mypy', 'pylint', 'python']
+    " список чекеров для TypeScript
+    let g:syntastic_typescript_checkers = ['tsuquyomi']
     " отключим syntastic при запуске
     let g:syntastic_mode_map = { 'mode': 'passive' }
     " отключим в pylint лишние назойливые варнинги:
@@ -102,6 +119,11 @@ if (s:platform == 'linux')
     let g:slimv_swank_cmd = '! screen -d -m -t REPL-SBCL sbcl '
                 \ .'--load ~/.vim/plugged/slimv/slime/start-swank.lisp'
     let g:lisp_rainbow=1  " подсвечивать парные кавычки разными цветами
+    " отключим проверку ошибок в tsuquyomi
+    let g:tsuquyomi_disable_quickfix = 1
+    " настроим хоткеи для tsuquyomi
+    let g:tsuquyomi_disable_default_mappings = 1
+    autocmd FileType typescript nnoremap <buffer> gd :TsuDefinition<CR>
 endif
 
 syntax on  " включим подсветку синтаксиса
@@ -254,10 +276,22 @@ autocmd BufRead,BufNewFile *.pu,*.plantuml set filetype=plantuml
 autocmd FileType plantuml nnoremap <buffer> <F5>
     \ :execute 'w'<CR>:execute '!plantuml %'<CR>
     \ :execute '!gthumb %:r.png 2> /dev/null'<CR>
-"JavaScript
-autocmd FileType javascript let &l:makeprg="node '%'"
+" TypeScript
+autocmd FileType typescript let &l:makeprg="make"
+autocmd FileType typescript nnoremap <buffer> <F5>
+    \ :execute 'w'<CR>:execute cls<CR>:execute 'lmake'<CR>
+autocmd FileType typescript nnoremap <F2> :execute '!make tags'<CR><CR>
+autocmd FileType typescript setlocal errorformat=
+    \%A%f:%l,
+    \%-Z%p^,
+    \%-G%.%#
+" JavaScript
+" autocmd FileType javascript let &l:makeprg="node '%'"
 autocmd FileType javascript nnoremap <buffer> <F5>
     \ :execute 'w'<CR>:execute cls<CR>:execute 'lmake'<CR>
+autocmd FileType javascript nnoremap <buffer> <S-F5>
+    \ :execute 'w'<CR>:execute cls<CR>:execute "!node '%'"<CR>
+autocmd FileType javascript nnoremap <F2> :execute '!make tags'<CR><CR>
 autocmd FileType javascript setlocal errorformat=
     \%A%f:%l,
     \%-Z%p^,
