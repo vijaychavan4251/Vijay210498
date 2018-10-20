@@ -27,10 +27,12 @@ if (s:platform == 'linux')
     call plug#begin('~/.vim/plugged')
     " изменить рабочую директорию на корень проекта
     Plug 'airblade/vim-rooter', { 'for':
-                \ ['c', 'cpp', 'java', 'javascript', 'python',
+                \ ['c', 'cpp', 'clojure', 'java', 'javascript', 'python',
                 \ 'typescript'] }
     " быстрая навигация по документу
     Plug 'easymotion/vim-easymotion'
+    " работа с парами кавычек, скобок и т.п.
+    Plug 'tpope/vim-surround'
     " файловый менеджер
     Plug 'kien/ctrlp.vim'
     " сниппеты (лежат в snippets и UltiSnips)
@@ -46,7 +48,7 @@ if (s:platform == 'linux')
     " отступы по PEP8 для Python
     Plug 'Vimjas/vim-python-pep8-indent', { 'for': 'python' }
     " Common Lisp REPL для vim
-    Plug 'kovisoft/slimv', { 'for': ['clojure', 'lisp', 'scheme' ] }
+    Plug 'kovisoft/slimv', { 'for': ['clojure', 'lisp', 'scheme'] }
     " REPL для Python, JavaScript, C++ и др.
     Plug 'metakirby5/codi.vim', { 'on': 'Codi' }
     " подсветка синтаксиса для JavaScript
@@ -60,8 +62,8 @@ if (s:platform == 'linux')
     call plug#end()
     " настроим плагины
     " автоопределение корневой директории проекта - по наличию в ней файлов
-    let g:rooter_patterns = [
-        \'Makefile', '.git', '.git/', '_darcs/', '.hg/', '.bzr/', '.svn/']
+    let g:rooter_patterns = ['Makefile', 'project.clj', '.git', '.git/',
+                \ '_darcs/', '.hg/', '.bzr/', '.svn/']
     let g:rooter_silent_chdir = 1  " не показывать сообщение о смене каталога
     " автодобавление корня проекта в пути поиска javacomplete2
     autocmd FileType java let g:JavaComplete_SourcesPath = FindRootDirectory()
@@ -116,10 +118,12 @@ if (s:platform == 'linux')
     let g:syntastic_java_javac_config_file_enabled=1
     " хоткей на включение/отключение проверки
     nnoremap <F3> :SyntasticToggleMode<CR> :w<CR>
-    " строка запуска SWANK-сервера для slimv
-    let g:slimv_swank_cmd = '! screen -d -m -t REPL-SBCL sbcl '
-                \ .'--load ~/.vim/plugged/slimv/slime/start-swank.lisp'
+    " строка запуска SWANK-сервера для slimv с помощью screen
+    " let g:slimv_swank_cmd = '! screen -d -m -t REPL-SBCL sbcl '
+    "             \ .'--load ~/.vim/plugged/slimv/slime/start-swank.lisp'
+    " let g:slimv_swank_clojure = '! screen -dmt REPL-CLOJURE lein swank'
     let g:lisp_rainbow=1  " подсвечивать парные кавычки разными цветами
+    " let g:paredit_mode=0  " отключим автодополнение скобок в slimv
     " отключим проверку ошибок в tsuquyomi
     let g:tsuquyomi_disable_quickfix = 1
     " настроим хоткеи для tsuquyomi
@@ -180,6 +184,7 @@ set smartindent  " включим автоотступы
 set smarttab  " умные отступы (например, удалять по 4 пробела по backspace)
 set backspace=2  " фиксим неработающий backspace
 set formatoptions-=t  " отключим автоперенос строк
+let g:leave_my_textwidth_alone="1"  " отключим автовставку символа новой строки
 set path+=./**  " добавим текущий каталог и подкаталоги к путям поиска файлов
 " восстановить позицию курсора с последнего сеанса работы
 au BufReadPost *
@@ -308,6 +313,13 @@ autocmd FileType java setlocal errorformat=
     \%A%f:%l:\ %t%*[^:]:\ %m,
     \%-Z%p^,
     \%+C%.%#,
+    \%-G%.%#
+" Clojure
+autocmd FileType clojure let &l:makeprg="lein run"
+autocmd FileType clojure nnoremap <buffer> <F5>
+    \ :execute 'w'<CR>:execute cls<CR>:execute 'lmake'<CR>
+autocmd FileType clojure setlocal errorformat=
+    \%A,%m\ compiling:(%f:%l:%c),
     \%-G%.%#
 " Python
 " определим программу, вызываемую командой make для файлов python
