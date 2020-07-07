@@ -3,13 +3,15 @@ set nocompatible  " включить улучшенный режим, несов
 filetype plugin on
 " определим платформу, под которой запущен vim
 " префикс s сделает переменную локальной для скрипта :h internal-variables
+let s:remote_session = ($SSH_TTY != "")
 let s:platform = 'unknown'
 if (has('win32') || has('win64'))
     let s:platform = 'windows'
 elseif has('unix')
     let s:platform = get({
-        \ 'Linux'  : 'linux',
-        \ 'Darwin' : 'macos',
+        \ 'Linux'  : 'unix',
+        \ 'Darwin' : 'unix',
+        \ 'FreeBSD' : 'unix',
         \ }, substitute(system('uname'), '\n', '', ''), 'unknown')
 endif
 " определим интерфейс: gvim, консоль или tty
@@ -23,7 +25,8 @@ else
 endif
 " загрузим плагины
 runtime macros/matchit.vim  " переход между парными ключевыми словами
-if (s:platform == 'linux')
+let s:plugins_enabled = 1
+if (s:plugins_enabled)
     call plug#begin('~/.vim/plugged')
     " изменить рабочую директорию на корень проекта
     Plug 'airblade/vim-rooter', { 'for':
@@ -155,9 +158,9 @@ if (s:platform == 'windows')
         " цвет текста и фона подсвеченной колонки:
         highlight ColorColumn ctermfg=Brown ctermbg=DarkBlue
     endif
-elseif (s:platform == 'linux')
+elseif (s:platform == 'unix')
     if (s:interface == 'gui')  " настройки для gvim
-        set guifont=xos4\ Terminus\ 20
+        set guifont=xos4\ Terminus\ 16
     elseif (s:interface == 'con')
         set t_Co=256  " использовать в иксах 256 цветов
         colorscheme solarized  " установим цветовую схему
@@ -165,8 +168,12 @@ elseif (s:platform == 'linux')
         highlight ColorColumn ctermfg=red
     elseif (s:interface == 'tty')
         set t_Co=8  " использовать в tty 8 цветов
-        let g:solarized_contrast="high"
-        colorscheme solarized  " установим цветовую схему
+        if s:remote_session
+            colorscheme default
+        else
+            let g:solarized_contrast="high"
+            colorscheme solarized
+        endif
         " подсветить диапазон колонок:
         let &colorcolumn=join(range(80,999),",")
         " цвет текста и фона подсвеченной колонки:
@@ -273,7 +280,7 @@ autocmd CompleteDone * pclose
 " КОМПИЛЯЦИЯ И ЗАПУСК
 if (s:platform == 'windows')
     let cls='!cls'
-elseif (s:platform == 'linux')
+elseif (s:platform == 'unix')
     let cls = '!clear'
 endif
 " PlantUML
@@ -302,6 +309,13 @@ autocmd FileType javascript setlocal errorformat=
     \%A%f:%l,
     \%-Z%p^,
     \%-G%.%#
+" C#
+autocmd FileType cs nnoremap <buffer> <F5>
+    \ :execute 'wa'<CR>:execute cls<CR>:execute 'lmake'<CR>
+autocmd FileType cs setlocal errorformat=
+    \%f(%l\\\,%c):\ %m,
+    \%-G%.%#
+autocmd FileType cs nnoremap <F2> :execute '!make tags'<CR><CR>
 " JAVA
 " autocmd FileType java let &l:makeprg="make run"
 autocmd FileType java nnoremap <buffer> <F5>
@@ -327,12 +341,12 @@ autocmd FileType clojure setlocal errorformat=
 autocmd FileType python let &l:makeprg="python3 '%'"
 autocmd FileType python nnoremap <buffer> <F5>
     \ :execute 'w'<CR>:execute cls<CR>:execute 'lmake'<CR>
+autocmd FileType python nnoremap <buffer> <S-F5>
+    \ :execute 'w'<CR>:execute cls<CR>:execute '!make tests'<CR>
 " научим vim распознавать вывод, генерируемый интерпретатором python
 autocmd FileType python setlocal errorformat=
-    \%C\ %.%#,
-    \%A\ \ File\ \"%f\"\\,
-    \\ line\ %l%.%#,
-    \%Z%[%^\ ]%\\@=%m,
+    \%A\ \ File\ \"%f\"\\,\ line\ %l%.%#,
+    \%Z\%*\\s%m,
     \%-G%.%#
 " C, C++
 let s:c_compiler='gcc'  " выберем компилятор для c
@@ -448,7 +462,7 @@ if (s:platform == 'windows')  " настройки для windows
     let s:statusline_vreplace_color_ctermfg='Black'
     let s:statusline_vreplace_color_guibg='Black'
     let s:statusline_vreplace_color_guifg='Brown'
-elseif (s:platform == 'linux')
+elseif (s:platform == 'unix')
     let s:statusline_normal_color_ctermbg='Black'
     let s:statusline_normal_color_ctermfg='DarkBlue'
     let s:statusline_normal_color_guibg='Black'

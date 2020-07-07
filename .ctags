@@ -6,6 +6,7 @@
 --regex-javascript=/^[ \t]*(export)?[ \t]*class[ \t]+([a-zA-Z0-9_]+)/\2/l,classes/
 --regex-javascript=/^[ \t]*(export)?[ \t]*function[ \t]+([a-zA-Z0-9_]+)/\2/u,functions/
 --regex-javascript=/^[ \t]*export[ \t]+var[ \t]+([a-zA-Z0-9_]+)/\1/V,variables/
+--regex-javascript=/^[ \t]*export[ \t]+const[ \t]+([a-zA-Z0-9_]+)/\1/o,constants/
 --regex-javascript=/^[ \t]*var[ \t]+([a-zA-Z0-9_]+)[ \t]*=[ \t]*function[ \t]*\(\)/\1/L,varlambdas/
 --regex-javascript=/^[ \t]*import[ \t]+([a-zA-Z0-9_]+)/\1/I,imports/
 
