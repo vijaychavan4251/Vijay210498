@@ -1,6 +1,9 @@
 set nocompatible  " включить улучшенный режим, несовместимый с vi
 " автоопределение типа файла и загрузка плагина для некоторых типов:
 filetype plugin on
+let s:plugins_enabled = 1
+let s:distraction_free_mode = 1
+:autocmd BufWinEnter * call UpdateDistractionFreeMode()
 " определим платформу, под которой запущен vim
 " префикс s сделает переменную локальной для скрипта :h internal-variables
 let s:remote_session = ($SSH_TTY != "")
@@ -25,7 +28,6 @@ else
 endif
 " загрузим плагины
 runtime macros/matchit.vim  " переход между парными ключевыми словами
-let s:plugins_enabled = 1
 if (s:plugins_enabled)
     call plug#begin('~/.vim/plugged')
     " изменить рабочую директорию на корень проекта
@@ -206,6 +208,7 @@ set wildmenu  " автодополнение в командной строке 
 set wildcharm=<C-Z>  " комба для вызова автодополнения
 " меню переключения между активными буферами
 nnoremap <F12> :b! <C-Z>
+nnoremap <F9> :call ToggleDistractionFreeMode()<CR>
 " сохранить всё и выйти
 nnoremap <silent> <F10> :wqa<CR>
 " k и g перемещают курсор на одну экранную строку, а gk и gj - на 1 фактическую
@@ -400,6 +403,27 @@ elseif (s:interface == 'tty')  " в tty не поддерживается unicod
         \%=<\ %{&filetype}\ %k<\ \ %p%%\ =\ %l/%L\ LN\ :\ \ %v\ <
         \%{b:whitespacecheck}<
 endif
+function! ToggleDistractionFreeMode()
+    let s:distraction_free_mode = (s:distraction_free_mode + 1) % 2
+    call UpdateDistractionFreeMode()
+endfunction
+function! UpdateDistractionFreeMode()
+    if s:distraction_free_mode
+        set noshowmode
+        set noruler
+        set laststatus=0
+        set noshowcmd
+        set nonumber
+        set colorcolumn=
+    else
+        set showmode
+        set ruler
+        set laststatus=2
+        set showcmd
+        set number
+        set colorcolumn=80
+    endif
+endfunction
 " будем проверять лишние пробелы и смешанные отступы при чтении и записи файла
 :autocmd BufWinEnter * call CheckWhitespace()
 " :autocmd BufNewFile * call CheckWhitespace()
