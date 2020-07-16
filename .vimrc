@@ -1,7 +1,7 @@
 set nocompatible  " включить улучшенный режим, несовместимый с vi
 " автоопределение типа файла и загрузка плагина для некоторых типов:
 filetype plugin on
-let s:plugins_enabled = 1
+let s:plugins_enabled = isdirectory($HOME."/.vim/plugged/")
 let s:distraction_free_mode = 1
 :autocmd BufWinEnter * call UpdateDistractionFreeMode()
 " определим платформу, под которой запущен vim
